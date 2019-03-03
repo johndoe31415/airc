@@ -28,7 +28,7 @@ class IRCNameType(enum.IntEnum):
 	NICKNAME_HOST = 3
 
 class IRCName(object):
-	NICKNAME_HOST_RE = re.compile(":(?P<nickname>[^!]+)!(?P<username>[^@]+)@(?P<hostname>[-0-9a-zA-Z:\.]+)")
+	NICKNAME_HOST_RE = re.compile(":(?P<nickname>[^!]+)!(?P<username>[^@]+)@(?P<hostname>[-/0-9a-zA-Z:\.]+)")
 	SERVER_RE = re.compile(":(?P<hostname>[-0-9a-zA-Z\.]+)")
 	NICKNAME_RE = re.compile(":(?P<nickname>[A-Za-z]+)")
 
@@ -85,4 +85,5 @@ class IRCName(object):
 
 if __name__ == "__main__":
 	print(IRCName.parse(":foobar"))
+	print(IRCName.parse(":freenode-connect!frigg@freenode/utility-bot/frigg"))
 

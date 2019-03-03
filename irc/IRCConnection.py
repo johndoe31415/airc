@@ -27,6 +27,7 @@ import time
 import socket
 import re
 import threading
+import collections
 from .RXBuffer import RXBuffer
 from .ExponentialBackoff import ExponentialBackoff
 from .ReplyCode import ReplyCode
@@ -125,6 +126,7 @@ class IRCConnection(object):
 		self._callbacks = {
 			"privmsg":				[ ],
 			"chanmsg":				[ ],
+			"ctcpreply":			[ ],
 			"incoming-dcc":			[ ],
 			"finished-dcc":			[ ],
 		}
@@ -134,6 +136,7 @@ class IRCConnection(object):
 		else:
 			self._lurk_channel_list = set(lurk_channel_list)
 		self._joined_channels = set()
+		self._present_people = collections.defaultdict(set)
 		if not self._verbose:
 			self._rxlog = None
 		else:
@@ -276,7 +279,7 @@ class IRCConnection(object):
 			self._effective_nickname = self._identity.nickname + str(random.randint(0, 99))
 			self._log.info("%s: Trying to change my nickname to %s.", self._hostname, self._effective_nickname)
 			self._txcmd("NICK %s" % (self._effective_nickname))
-		elif reply_code in [ReplyCode.RPL_WHOISHOST_1, ReplyCode.RPL_WHOISHOST_2 ]:
+		elif reply_code in [ ReplyCode.RPL_WHOISHOST_1, ReplyCode.RPL_WHOISHOST_2 ]:
 			if len(args) == 3:
 				(forwhom, nickname, message) = args
 				if forwhom == nickname:
@@ -313,6 +316,15 @@ class IRCConnection(object):
 						self._log.debug("%s: WHOIS confirms joined channel list is accurate: %s.", self._hostname, ", ".join(self._joined_channels))
 			else:
 				self._log.error("%s: Don't know how to interpret %s (%s)", self._hostname, reply_code, str(args))
+		elif reply_code == ReplyCode.RPL_NAMREPLY:
+			if len(args) == 4:
+				channel = args[2]
+				names = args[3].split()
+				present_people = set(name.lstrip("+@") for name in names)
+				for nickname in present_people:
+					self._joined_channel(channel, nickname)
+			else:
+				self._log.error("%s: Don't know how to interpret %s (%s)", self._hostname, reply_code, str(args))
 
 	def _retrieve_local_ip(self):
 		self._txcmd("WHOIS %s" % (self._effective_nickname))
@@ -333,6 +345,7 @@ class IRCConnection(object):
 		if origin.nickname == self._effective_nickname:
 			self._log.info("%s: Successfully joined channel %s.", self._hostname, channel)
 			self._joined_channels.add(channel.lower())
+		self._joined_channel(channel, origin.nickname)
 
 	def _handle_msg_INVITE_2(self, origin, target, channel):
 		# Just a reply to our PING
@@ -346,13 +359,20 @@ class IRCConnection(object):
 		# One or more mode changes of users in the channel
 		pass
 
+	def _left_channel(self, channel, nickname):
+		self._present_people[channel].discard(nickname)
+
+	def _joined_channel(self, channel, nickname):
+		if nickname != self._effective_nickname:
+			self._present_people[channel].add(nickname)
+
 	def _handle_msg_PART_1(self, origin, channel):
 		# Someone left the channel without any message
-		pass
+		self._left_channel(channel, origin.nickname)
 
 	def _handle_msg_PART_2(self, origin, channel, message):
 		# Someone left the channel with a message
-		pass
+		self._left_channel(channel, origin.nickname)
 
 	def _handle_msg_TOPIC_2(self, origin, channel, topic):
 		# Channel changed topic
@@ -360,14 +380,21 @@ class IRCConnection(object):
 
 	def _handle_msg_PART_1(self, origin, channel):
 		# Someone left the channel
-		pass
+		self._left_channel(channel, origin.nickname)
 
 	def _handle_msg_QUIT_1(self, origin, message):
-		# Someone quit IRC
-		pass
+		# Someone quit IRC, i.e., left all channels
+		for namelist in self._present_people.values():
+			namelist.discard(origin.nickname)
+
+	def _handle_CTCP_reply(self, origin, reply):
+		self.perform_callback("ctcpreply", origin, reply)
 
 	def _handle_msg_NOTICE_2(self, origin, destination, message):
 		self._log.debug("%s: Private notice from %s: \"%s\"", self._hostname, origin, message)
+		if (len(message) >= 2) and (message[0] == "\x01") and (message[-1] == "\x01"):
+			# It's a CTCP reply
+			self._handle_CTCP_reply(origin, message[1 : -1])
 
 	def _handle_msg_MODE_2(self, origin, nickname, mode):
 		if nickname == self._effective_nickname:
@@ -385,6 +412,12 @@ class IRCConnection(object):
 			rejoin_time = self._backoffs["rejoin-channel"]()
 			self._log.info("%s: Was kicked from %s by %s: %s -- will try rejoining in %.1f sec", self._hostname, channel, origin, reason, rejoin_time)
 			self._cbregistry.register(("join", channel), rejoin_time, lambda: self.join_channel(channel))
+
+	def _handle_server_msg_NOTICE_2(self, target, message):
+		self._log.info("%s: server notice '%s'", self._hostname, message)
+
+	def _handle_server_msg_PRIVMSG_2(self, target, message):
+		self._log.info("%s: server private message '%s'", self._hostname, message)
 
 	def _handle_msg_PRIVMSG_2(self, origin, target, message):
 		if target.startswith("#"):
@@ -422,6 +455,9 @@ class IRCConnection(object):
 				self._log.debug("%s: Ignored CTCP TIME from %s", self._hostname, origin)
 		else:
 			self._log.warn("%s: Unhandled CTCP message from %s to %s: \"%s\"", self._hostname, origin, target, message)
+
+	def get_present_people(self, channel):
+		return iter(self._present_people[channel])
 
 	def perform_callback(self, name, *args):
 		for callback in self._callbacks[name]:

@@ -128,9 +128,7 @@ class IRCClient(object):
 	def receivecmd(self, msgtype, params):
 		_log.debug("  <- %s: %s" % (str(msgtype), str(params)))
 		if msgtype == "privmsg":
-			if params["text"] == "\x01VERSION\x01":
-				self.msg(params["from"], "\x01VERSION QuizBot:0.01:Linux\x01")
-			elif params["to"].startswith("#"):
+			if params["to"].startswith("#"):
 				# Incoming channel message
 				chanmsg = ChannelMsg(channel = params["to"], origin = self.parse_origin(params["from"]), text = params["text"])
 				self._rxchannel(chanmsg)
