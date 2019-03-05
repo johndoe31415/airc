@@ -22,6 +22,7 @@
 import random
 import pkgutil
 import datetime
+import json
 from .RandomDist import RandomDist
 
 class _NicknameGenerator(object):
@@ -173,14 +174,9 @@ class FakeIdentity(BaseIdentity):
 		BaseIdentity.__init__(self, nickname, version = version, timezone_hrs = timezone_hrs, clk_deviation_secs = clk_deviation_secs)
 
 	def _select_version(self):
-		client_data = pkgutil.get_data("irc.data", "clients.txt")
-		lines = client_data.decode("utf-8").split("\n")[:-1]
-		random_dist = { }
-		for line in lines:
-			count = int(line[:7])
-			client = line[8:]
-			random_dist[client] = count
-		random_dist = RandomDist(random_dist)
+		client_data = pkgutil.get_data("irc.data", "clients.json")
+		client_data = json.loads(client_data)
+		random_dist = RandomDist(client_data)
 		return random_dist.event()
 
 

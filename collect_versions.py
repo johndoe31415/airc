@@ -20,6 +20,7 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
+import sys
 import time
 import json
 import random
@@ -27,7 +28,7 @@ import irc
 from irc.Identity import FakeIdentity
 
 identity = FakeIdentity()
-channels = [ "#debian" ]
+channels = [ sys.argv[1] ]
 connection = irc.IRCConnection(hostname = "irc.freenode.net", identity = identity, lurk_channel_list = channels, verbose = True, debugging = True)
 
 class CollectBot(object):

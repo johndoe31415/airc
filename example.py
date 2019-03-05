@@ -28,6 +28,7 @@ from irc.Identity import FakeIdentity
 logger = logging.getLogger("irc")
 
 identity = FakeIdentity()
+print("My identity:", identity)
 channels = [ "#moo12345" ]
 connection = irc.IRCConnection(hostname = "irc.freenode.net", identity = identity, lurk_channel_list = channels, verbose = True, debugging = True)
 
