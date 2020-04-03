@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 #
 #	RandomDist - Generate random values of given distribution
-#	Copyright (C) 2011-2013 Johannes Bauer
-#	
+#	Copyright (C) 2011-2020 Johannes Bauer
+#
 #	This file is part of jpycommon.
 #
 #	jpycommon is free software; you can redistribute it and/or modify
@@ -50,7 +50,7 @@ if __name__ == "__main__":
 		"20":	20,
 		"60":	60,
 	})
-	
+
 	total = 300000
 	events = { }
 	for i in range(total):
@@ -58,5 +58,3 @@ if __name__ == "__main__":
 		events[x] = events.get(x, 0) + 1
 	for (event, cnt) in events.items():
 		print("%-8s %7.4f%%" % (event, cnt / total * 100))
-
-
