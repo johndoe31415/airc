@@ -1,5 +1,5 @@
 #	pyirclib - Python IRC client library with DCC and anonymization support
-#	Copyright (C) 2020-2022 Johannes Bauer
+#	Copyright (C) 2016-2022 Johannes Bauer
 #
 #	This file is part of pyirclib.
 #
@@ -19,25 +19,17 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
-from .IRCServer import IRCServer
-from .IRCIdentityGenerator import IRCIdentityGenerator
+from airc.IRCIdentity import IRCIdentity
+from airc.Exceptions import OutOfValidNicknamesException
 
-class IRCSession():
-	def __init__(self, irc_servers = list[IRCServer], identity_generator = IRCIdentityGenerator):
-		self._irc_servers = irc_servers
-		self._identity_generator = identity_generator
+class IRCIdentityGenerator():
+	def __iter__(self):
+		raise NotImplementedError()
 
-#	async def _connection_loop(self):
-#		while True:
-#			try:
-#				(reader, writer) = await asyncio.open_connection(host = self._hostname, port = self._port)
-#				await self._handle_connection(reader, writer)
-#				writer.close()
-#			except (ConnectionRefusedError, ConnectionResetError, UnicodeDecodeError, socket.gaierror) as e:
-#				print(self._hostname, "errored", e)
-#			print("trying to reconnect...", self._hostname)
-#			await asyncio.sleep(2)
-#
-#	async def task(self):
-#		task = asyncio.create_task(self._connection_loop())
-#		return task
+class ListIRCIdentityGenerator():
+	def __init__(self, identities: list[IRCIdentity]):
+		self._identities = identities
+
+	def __iter__(self):
+		yield from self._identities
+		raise OutOfValidNicknamesException(f"Exhausted all {len(self._identities)} nicknames, no more left.")

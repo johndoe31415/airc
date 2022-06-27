@@ -19,25 +19,5 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
-from .IRCServer import IRCServer
-from .IRCIdentityGenerator import IRCIdentityGenerator
-
-class IRCSession():
-	def __init__(self, irc_servers = list[IRCServer], identity_generator = IRCIdentityGenerator):
-		self._irc_servers = irc_servers
-		self._identity_generator = identity_generator
-
-#	async def _connection_loop(self):
-#		while True:
-#			try:
-#				(reader, writer) = await asyncio.open_connection(host = self._hostname, port = self._port)
-#				await self._handle_connection(reader, writer)
-#				writer.close()
-#			except (ConnectionRefusedError, ConnectionResetError, UnicodeDecodeError, socket.gaierror) as e:
-#				print(self._hostname, "errored", e)
-#			print("trying to reconnect...", self._hostname)
-#			await asyncio.sleep(2)
-#
-#	async def task(self):
-#		task = asyncio.create_task(self._connection_loop())
-#		return task
+class AsyncIRCException(Exception): pass
+class OutOfValidNicknamesException(AsyncIRCException): pass

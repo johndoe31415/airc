@@ -36,11 +36,11 @@ class IRCIdentity():
 
 	@property
 	def username(self):
-		return self._nickname
+		return self._username
 
 	@property
 	def realname(self):
-		return self._nickname
+		return self._realname
 
 	@property
 	def version(self):

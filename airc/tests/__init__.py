@@ -20,3 +20,5 @@
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
 from .IRCServerTests import IRCServerTests
+from .IRCIdentityTests import IRCIdentityTests
+from .IRCIdentityGeneratorTests import IRCIdentityGeneratorTests
