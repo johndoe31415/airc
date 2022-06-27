@@ -92,15 +92,6 @@ class IRCSession():
 					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because we encountered a TLS error: {e}")
 				await asyncio.sleep(delay)
 
-#			try:
-#				(reader, writer) = await asyncio.open_connection(host = self._hostname, port = self._port)
-#				await self._handle_connection(reader, writer)
-#				writer.close()
-#			except (ConnectionRefusedError, ConnectionResetError, UnicodeDecodeError, socket.gaierror) as e:
-#				print(self._hostname, "errored", e)
-#			print("trying to reconnect...", self._hostname)
-#			await asyncio.sleep(2)
-
 	def task(self):
 		task = asyncio.create_task(self._connection_loop())
 		return task
