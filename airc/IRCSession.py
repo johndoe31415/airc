@@ -78,7 +78,7 @@ class IRCSession():
 				except OutOfValidNicknamesException as e:
 					delay = self.get_var(IRCSessionVariable.ReconnectTimeAfterNicknameExhaustionSecs)
 					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because no nickname was acceptable: {e}")
-				except socket.gaierror as e:
+				except (socket.gaierror, ConnectionRefusedError, ConnectionResetError) as e:
 					delay = self.get_var(IRCSessionVariable.ReconnectTimeAfterConnectionErrorSecs)
 					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because of socket error: {e}")
 				except ServerSeveredConnectionException as e:

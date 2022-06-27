@@ -105,5 +105,5 @@ class IRCMessageHandler():
 			parsed_msg = IRCMessage(origin = origin, cmdcode = cmdcode, params = params)
 			_log.trace(parsed_msg)
 			return parsed_msg
-		except ValueError as e:
+		except (ValueError, UnicodeDecodeError) as e:
 			raise ServerMessageParseException(f"Could not parse server message: {text}") from e
