@@ -12,5 +12,8 @@ generate nicknames automatically that "look" right.
 It's a project that has been written a fairly long time ago and isn't well
 maintained by me anymore.
 
+## Dependencies
+pyirclib requires Python 3.10 or above.
+
 ## License
 GNU GPL-3.
