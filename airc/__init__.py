@@ -1,5 +1,5 @@
 #	pyirclib - Python IRC client library with DCC and anonymization support
-#	Copyright (C) 2020-2020 Johannes Bauer
+#	Copyright (C) 2020-2022 Johannes Bauer
 #
 #	This file is part of pyirclib.
 #
@@ -18,6 +18,3 @@
 #	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
-
-from .Identity import BaseIdentity, FakeIdentity
-from .IRCSession import IRCSession

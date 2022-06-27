@@ -1,3 +1,6 @@
+REWRITE BRANCH ENTIRELY DYSFUNCTIONAL
+**THIS IS REWRITTEN FROM SCRATCH**
+
 # pyirclib
 pyirclib is a pure Python3-based IRC client that supports DCC file transfers as
 well as anonymization of identity. For example, it contains a list of commonly
