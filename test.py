@@ -6,7 +6,7 @@ import logging
 
 def setup_logging():
 	loglevel = logging.EAVESDROP
-	logging.basicConfig(format = "{name:>40s} [{levelname:.1s}]: {message}", style = "{", level = loglevel)
+	logging.basicConfig(format = "{name:>40s} [{levelname:.2s}]: {message}", style = "{", level = loglevel)
 
 async def main():
 #	irc_servers = [ airc.IRCServer(hostname = "irc.freenode.org") ]

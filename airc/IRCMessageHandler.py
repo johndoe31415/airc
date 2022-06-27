@@ -44,20 +44,26 @@ class IRCMessage():
 		return self._params
 
 	def is_cmdcode(self, cmdcode):
-		if isinstance(self.cmdcode, str):
+		if isinstance(self.cmdcode, str) and isinstance(cmdcode, str):
 			return self.cmdcode.lower() == cmdcode.lower()
 		else:
 			return self.cmdcode == cmdcode
 
+	def is_from_user(self, username):
+		return (self._origin is not None) and (self._origin["nickname"].lower() == username.lower())
+
 	def __str__(self):
 		if self.origin is not None:
-			return "IRCMessage<%s from %s>: %s" % (self.cmdcode, self.origin, self.params)
+			if self.origin["nickname"] is not None:
+				return "IRCMessage<%s from %s>: %s" % (self.cmdcode, self.origin["nickname"], self.params)
+			else:
+				return "IRCMessage<%s from host %s>: %s" % (self.cmdcode, self.origin["hostname"], self.params)
 		else:
 			return "IRCMessage<%s>: %s" % (self.cmdcode, self.params)
 
 
 class IRCMessageHandler():
-	_LONG_ARG_SEPARATOR = re.compile(r" ?:")
+	_ORIGIN_REGEX = re.compile(r":((?P<nickname>[^!]+)!(?P<username_is_alias>~?)(?P<username>[^@]+)@)?(?P<hostname>.*)")
 
 	def __init__(self, codec: str = "utf-8"):
 		self._codec = codec
@@ -70,6 +76,12 @@ class IRCMessageHandler():
 		if msg.startswith(":"):
 			# Have origin
 			(origin, msg) = msg.split(" ", maxsplit = 1)
+			result = self._ORIGIN_REGEX.fullmatch(origin)
+			if result is None:
+				_log.error(f"Could not parse origin string {origin} using regular expression.")
+				origin = None
+			else:
+				origin = result.groupdict()
 		else:
 			origin = None
 
@@ -81,12 +93,11 @@ class IRCMessageHandler():
 			except ValueError:
 				pass
 
-		if ":" in params:
-			(pre, post) = self._LONG_ARG_SEPARATOR.split(params, maxsplit = 1)
-			if len(pre) == 0:
-				params = [ post ]
-			else:
-				params = pre.split(" ") + [ post ]
+		if params.startswith(":"):
+			params = [ params[1:] ]
+		elif " :" in params:
+			(pre, post) = params.split(" :", maxsplit = 1)
+			params = pre.split(" ") + [ post ]
 		else:
 			params = params.split(" ")
 		parsed_msg = IRCMessage(origin = origin, cmdcode = cmdcode, params = params)

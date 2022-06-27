@@ -22,3 +22,4 @@
 from .IRCServerTests import IRCServerTests
 from .IRCIdentityTests import IRCIdentityTests
 from .IRCIdentityGeneratorTests import IRCIdentityGeneratorTests
+from .IRCMessageHandlerTests import IRCMessageHandlerTests

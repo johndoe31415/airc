@@ -26,6 +26,7 @@ from airc.IRCMessageHandler import IRCMessageHandler
 from airc.Exceptions import ServerSeveredConnectionException
 from airc.Enums import IRCSessionVariable, IRCConnectionState
 from airc.IRCResponse import IRCResponse
+from airc.ReplyCode import ReplyCode
 
 _log = logging.getLogger(__spec__.name)
 
@@ -86,15 +87,21 @@ class IRCConnection():
 
 			mode = "8"
 			try:
-				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {mode} * :{irc_identity.realname or irc_identity.nickname}", response = IRCResponse(finish_cmdcodes = ("MODE", ))), timeout = self._irc_session.get_var(IRCSessionVariable.RegistrationTimeoutSecs))
+				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {mode} * :{irc_identity.realname or irc_identity.nickname}", response = IRCResponse(finish_cmdcodes = ("MODE", ReplyCode.ERR_NICKNAMEINUSE, ReplyCode.ERR_ERRONEUSNICKNAME))), timeout = self._irc_session.get_var(IRCSessionVariable.RegistrationTimeoutSecs))
+				if rsp[0].is_cmdcode("MODE"):
+					_log.info(f"Registeration at server {self._irc_server} using identity {irc_identity} completed successfully.")
+					self._state = IRCConnectionState.Registered
+					self._client.our_nickname = rsp[0].params[0]
+					break
+				elif rsp[0].is_cmdcode(ReplyCode.ERR_NICKNAMEINUSE):
+					_log.warning(f"Registration at server {self._irc_server} using identity {irc_identity} did not let us use nickname (already in use).")
+				elif rsp[0].is_cmdcode(ReplyCode.ERR_ERRONEUSNICKNAME):
+					_log.warning(f"Registration at server {self._irc_server} using identity {irc_identity} did not let us use nickname (erroneous nickname).")
+				continue
 			except asyncio.exceptions.TimeoutError:
 				# Registration failed. Retry with next identity
-				_log.error(f"Registeration at server {self._irc_server} using identity {irc_identity} timed out after {self._irc_session.get_var(IRCSessionVariable.RegistrationTimeoutSecs)} seconds.")
+				_log.error(f"Registration at server {self._irc_server} using identity {irc_identity} timed out after {self._irc_session.get_var(IRCSessionVariable.RegistrationTimeoutSecs)} seconds.")
 				pass
-			else:
-				_log.info(f"Registeration at server {self._irc_server} using identity {irc_identity} completed successfully.")
-				self._state = IRCConnectionState.Registered
-				break
 
 	async def handle(self):
 		self._state = IRCConnectionState.Established

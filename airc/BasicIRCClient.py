@@ -27,6 +27,16 @@ class BasicIRCClient():
 	def __init__(self, irc_session, irc_connection):
 		self._irc_session = irc_session
 		self._irc_connection = irc_connection
+		self._our_nickname = None
+
+	@property
+	def our_nickname(self):
+		return self._our_nickname
+
+	@our_nickname.setter
+	def our_nickname(self, value):
+		_log.info(f"Our nickname with {self._irc_connection.irc_server} is now {value}")
+		self._our_nickname = value
 
 	@property
 	def irc_session(self):
@@ -41,3 +51,6 @@ class BasicIRCClient():
 			data = msg.params[0]
 			_log.debug(f"Sending PONG reply to PING request ({data}) on {self._irc_connection.irc_server}.")
 			self._irc_connection.tx_message("PONG :%s" % (data))
+		elif msg.is_cmdcode("nick") and msg.is_from_user(self.our_nickname):
+			# Server changed our nickname
+			self.our_nickname = msg.params[0]
