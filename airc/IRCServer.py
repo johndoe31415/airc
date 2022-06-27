@@ -19,6 +19,8 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
+import ssl
+
 class IRCServer():
 	def __init__(self, hostname: str, port: int = 6666, use_ssl: bool = False, password: str | None = None):
 		self._hostname = hostname
@@ -41,6 +43,18 @@ class IRCServer():
 	@property
 	def password(self):
 		return self._password
+
+	@property
+	def ssl_ctx(self):
+		if self._use_ssl is False:
+			return None
+		else:
+			ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+			ssl_ctx.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_COMPRESSION
+			ssl_ctx.load_verify_locations(capath = "/etc/ssl/certs")
+			ssl_ctx.check_hostname = True
+			ssl_ctx.set_ciphers("!NULL:!EXP:!LOW:!MEDIUM:!ADH:!AECDH:!IDEA:!SEED:!MD5:!RC4:!DES:!DSS:!CAMELLIA:!AESCCM8:HIGH+EECDH:HIGH+EDH:!SHA:+SHA256:+RSA:+AES:+DHE:+ARIA")
+			return ssl_ctx
 
 	def __str__(self):
 		strs = [ f"{self.hostname}:{self.port}" ]

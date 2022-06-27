@@ -50,7 +50,7 @@ class IRCSession():
 	async def _connect(self, irc_server):
 		try:
 			writer = None
-			(reader, writer) = await asyncio.open_connection(host = irc_server.hostname, port = irc_server.port)
+			(reader, writer) = await asyncio.open_connection(host = irc_server.hostname, port = irc_server.port, ssl = irc_server.ssl_ctx)
 			connection = IRCConnection(self, irc_server, reader, writer)
 			await connection.handle()
 		finally:
