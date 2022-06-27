@@ -20,10 +20,16 @@
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
 import asyncio
+import logging
+import socket
+import ssl
 from .IRCServer import IRCServer
 from .IRCIdentityGenerator import IRCIdentityGenerator
 from .IRCConnection import IRCConnection
 from airc.Enums import IRCSessionVariable
+from airc.Exceptions import OutOfValidNicknamesException, ServerSeveredConnectionException, ServerMessageParseException
+
+_log = logging.getLogger(__spec__.name)
 
 class IRCSession():
 	def __init__(self, irc_client_class, irc_servers: list[IRCServer], identity_generator: IRCIdentityGenerator):
@@ -33,7 +39,12 @@ class IRCSession():
 		self._shutdown = False
 		self._connection = None
 		self._variables = {
-			IRCSessionVariable.RegistrationTimeoutSecs:		10,
+			IRCSessionVariable.RegistrationTimeoutSecs:							10,
+			IRCSessionVariable.ReconnectTimeAfterNicknameExhaustionSecs:		60,
+			IRCSessionVariable.ReconnectTimeAfterConnectionErrorSecs:			5,
+			IRCSessionVariable.ReconnectTimeAfterSeveredConnectionSecs:			15,
+			IRCSessionVariable.ReconnectTimeAfterServerParseExceptionSecs:		10,
+			IRCSessionVariable.ReconnectTimeAfterTLSErrorSecs:					10,
 		}
 
 	@property
@@ -48,6 +59,7 @@ class IRCSession():
 		return self._variables[key]
 
 	async def _connect(self, irc_server):
+		_log.info(f"Connecting to {irc_server}")
 		try:
 			writer = None
 			(reader, writer) = await asyncio.open_connection(host = irc_server.hostname, port = irc_server.port, ssl = irc_server.ssl_ctx)
@@ -60,7 +72,25 @@ class IRCSession():
 	async def _connection_loop(self):
 		while not self._shutdown:
 			for irc_server in self._irc_servers:
-				await self._connect(irc_server)
+				delay = 0
+				try:
+					await self._connect(irc_server)
+				except OutOfValidNicknamesException as e:
+					delay = self.get_var(IRCSessionVariable.ReconnectTimeAfterNicknameExhaustionSecs)
+					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because no nickname was acceptable: {e}")
+				except socket.gaierror as e:
+					delay = self.get_var(IRCSessionVariable.ReconnectTimeAfterConnectionErrorSecs)
+					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because of socket error: {e}")
+				except ServerSeveredConnectionException as e:
+					delay = self.get_var(IRCSessionVariable.ReconnectTimeAfterSeveredConnectionSecs)
+					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because server severed the connection: {e}")
+				except ServerMessageParseException as e:
+					delay = self.get_var(IRCSessionVariable.ReconnectTimeAfterServerParseExceptionSecs)
+					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because server sent a message we could not parse: {e}")
+				except ssl.SSLError as e:
+					delay = self.get_var(IRCSessionVariable.ReconnectTimeAfterTLSErrorSecs)
+					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because we encountered a TLS error: {e}")
+				await asyncio.sleep(delay)
 
 #			try:
 #				(reader, writer) = await asyncio.open_connection(host = self._hostname, port = self._port)

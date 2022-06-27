@@ -22,6 +22,7 @@
 import re
 import logging
 from airc.ReplyCode import ReplyCode
+from airc.Exceptions import ServerMessageParseException
 
 _log = logging.getLogger(__spec__.name)
 
@@ -71,35 +72,38 @@ class IRCMessageHandler():
 	def encode(self, text):
 		return (text + "\r\n").encode(self._codec)
 
-	def parse(self, msg):
-		msg = msg.decode(self._codec).rstrip("\r\n")
-		if msg.startswith(":"):
-			# Have origin
-			(origin, msg) = msg.split(" ", maxsplit = 1)
-			result = self._ORIGIN_REGEX.fullmatch(origin)
-			if result is None:
-				_log.error(f"Could not parse origin string {origin} using regular expression.")
-				origin = None
+	def parse(self, text):
+		try:
+			msg = text.decode(self._codec).rstrip("\r\n")
+			if msg.startswith(":"):
+				# Have origin
+				(origin, msg) = msg.split(" ", maxsplit = 1)
+				result = self._ORIGIN_REGEX.fullmatch(origin)
+				if result is None:
+					_log.error(f"Could not parse origin string {origin} using regular expression.")
+					origin = None
+				else:
+					origin = result.groupdict()
 			else:
-				origin = result.groupdict()
-		else:
-			origin = None
+				origin = None
 
-		(cmdcode, params) = msg.split(" ", maxsplit = 1)
-		if (len(cmdcode) == 3) and (cmdcode.isdigit()):
-			cmdcode = int(cmdcode)
-			try:
-				cmdcode = ReplyCode(cmdcode)
-			except ValueError:
-				pass
+			(cmdcode, params) = msg.split(" ", maxsplit = 1)
+			if (len(cmdcode) == 3) and (cmdcode.isdigit()):
+				cmdcode = int(cmdcode)
+				try:
+					cmdcode = ReplyCode(cmdcode)
+				except ValueError:
+					pass
 
-		if params.startswith(":"):
-			params = [ params[1:] ]
-		elif " :" in params:
-			(pre, post) = params.split(" :", maxsplit = 1)
-			params = pre.split(" ") + [ post ]
-		else:
-			params = params.split(" ")
-		parsed_msg = IRCMessage(origin = origin, cmdcode = cmdcode, params = params)
-		_log.trace(parsed_msg)
-		return parsed_msg
+			if params.startswith(":"):
+				params = [ params[1:] ]
+			elif " :" in params:
+				(pre, post) = params.split(" :", maxsplit = 1)
+				params = pre.split(" ") + [ post ]
+			else:
+				params = params.split(" ")
+			parsed_msg = IRCMessage(origin = origin, cmdcode = cmdcode, params = params)
+			_log.trace(parsed_msg)
+			return parsed_msg
+		except ValueError as e:
+			raise ServerMessageParseException(f"Could not parse server message: {text}") from e

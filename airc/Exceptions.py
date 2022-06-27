@@ -22,3 +22,4 @@
 class AsyncIRCException(Exception): pass
 class OutOfValidNicknamesException(AsyncIRCException): pass
 class ServerSeveredConnectionException(AsyncIRCException): pass
+class ServerMessageParseException(AsyncIRCException): pass

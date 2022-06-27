@@ -23,6 +23,11 @@ import enum
 
 class IRCSessionVariable(enum.IntEnum):
 	RegistrationTimeoutSecs = 0
+	ReconnectTimeAfterNicknameExhaustionSecs = 1
+	ReconnectTimeAfterConnectionErrorSecs = 2
+	ReconnectTimeAfterSeveredConnectionSecs = 3
+	ReconnectTimeAfterServerParseExceptionSecs = 4
+	ReconnectTimeAfterTLSErrorSecs = 5
 
 class IRCConnectionState(enum.IntEnum):
 	Established = 0
