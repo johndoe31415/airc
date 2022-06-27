@@ -19,17 +19,21 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
+import re
+import logging
 from airc.ReplyCode import ReplyCode
 
+_log = logging.getLogger(__spec__.name)
+
 class IRCMessage():
-	def __init__(self, prefix, cmdcode, params):
-		self._prefix = prefix
+	def __init__(self, origin, cmdcode, params):
+		self._origin = origin
 		self._cmdcode = cmdcode
 		self._params = params
 
 	@property
-	def prefix(self):
-		return self._prefix
+	def origin(self):
+		return self._origin
 
 	@property
 	def cmdcode(self):
@@ -46,13 +50,15 @@ class IRCMessage():
 			return self.cmdcode == cmdcode
 
 	def __str__(self):
-		if self.prefix is not None:
-			return "IRCMessage<%s from %s>: %s" % (self.cmdcode, self.prefix, self.params)
+		if self.origin is not None:
+			return "IRCMessage<%s from %s>: %s" % (self.cmdcode, self.origin, self.params)
 		else:
 			return "IRCMessage<%s>: %s" % (self.cmdcode, self.params)
 
 
 class IRCMessageHandler():
+	_LONG_ARG_SEPARATOR = re.compile(r" ?:")
+
 	def __init__(self, codec: str = "utf-8"):
 		self._codec = codec
 
@@ -62,10 +68,10 @@ class IRCMessageHandler():
 	def parse(self, msg):
 		msg = msg.decode(self._codec).rstrip("\r\n")
 		if msg.startswith(":"):
-			# Have prefix
-			(prefix, msg) = msg.split(" ", maxsplit = 1)
+			# Have origin
+			(origin, msg) = msg.split(" ", maxsplit = 1)
 		else:
-			prefix = None
+			origin = None
 
 		(cmdcode, params) = msg.split(" ", maxsplit = 1)
 		if (len(cmdcode) == 3) and (cmdcode.isdigit()):
@@ -76,11 +82,13 @@ class IRCMessageHandler():
 				pass
 
 		if ":" in params:
-			if params[0] == ":":
-				params = [ params[1:] ]
+			(pre, post) = self._LONG_ARG_SEPARATOR.split(params, maxsplit = 1)
+			if len(pre) == 0:
+				params = [ post ]
 			else:
-				(pre, post) = params.split(":", maxsplit = 1)
 				params = pre.split(" ") + [ post ]
 		else:
 			params = params.split(" ")
-		return IRCMessage(prefix = prefix, cmdcode = cmdcode, params = params)
+		parsed_msg = IRCMessage(origin = origin, cmdcode = cmdcode, params = params)
+		_log.trace(parsed_msg)
+		return parsed_msg
