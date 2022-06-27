@@ -48,6 +48,9 @@ class IRCResponse():
 		if do_record:
 			self._messages.append(msg)
 
+		if self._future.done():
+			return False
+
 		is_finished = any(msg.is_cmdcode(cmdcode) for cmdcode in self.finish_cmdcodes)
 		if is_finished:
 			# This response is done, finalize the future.
