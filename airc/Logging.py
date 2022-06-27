@@ -19,9 +19,20 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
-import airc.Logging
-from .IRCServer import IRCServer
-from .IRCIdentity import IRCIdentity
-from .IRCIdentityGenerator import ListIRCIdentityGenerator
-from .IRCSession import IRCSession
-from .BasicIRCClient import BasicIRCClient
+import logging
+
+logging.TRACE = logging.DEBUG - 1
+logging.EAVESDROP = logging.DEBUG - 2
+logging.addLevelName(logging.TRACE, "TRACE")
+logging.addLevelName(logging.EAVESDROP, "EAVESDROP")
+
+class CustomLogger(logging.Logger):
+	def trace(self, msg, *args, **kwargs):
+		if self.isEnabledFor(logging.TRACE):
+			self._log(logging.TRACE, msg, args, **kwargs)
+
+	def eavesdrop(self, msg, *args, **kwargs):
+		if self.isEnabledFor(logging.EAVESDROP):
+			self._log(logging.EAVESDROP, msg, args, **kwargs)
+
+logging.setLoggerClass(CustomLogger)

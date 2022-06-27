@@ -54,8 +54,7 @@ class IRCConnection():
 		self._client.handle_msg(msg)
 
 	def tx_message(self, text: str, response: IRCResponse | None = None):
-		print("->", text)
-		_log.debug(f"-> {text}")
+		_log.trace(f"-> {self.irc_server} : {text}")
 		binmsg = self._msghandler.encode(text)
 		self._writer.write(binmsg)
 		if response is not None:
@@ -70,6 +69,7 @@ class IRCConnection():
 				self._shutdown = True
 				self._writer.close()
 				break
+			_log.eavesdrop(f"<- {self.irc_server} : {line}")
 			msg = self._msghandler.parse(line)
 			self._rx_message(msg)
 
