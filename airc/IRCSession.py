@@ -23,6 +23,7 @@ import asyncio
 from .IRCServer import IRCServer
 from .IRCIdentityGenerator import IRCIdentityGenerator
 from .IRCConnection import IRCConnection
+from airc.Enums import IRCSessionVariable
 
 class IRCSession():
 	def __init__(self, irc_client_class, irc_servers: list[IRCServer], identity_generator: IRCIdentityGenerator):
@@ -31,6 +32,9 @@ class IRCSession():
 		self._identity_generator = identity_generator
 		self._shutdown = False
 		self._connection = None
+		self._variables = {
+			IRCSessionVariable.RegistrationTimeoutSecs:		10,
+		}
 
 	@property
 	def irc_client_class(self):
@@ -39,6 +43,9 @@ class IRCSession():
 	@property
 	def identity_generator(self):
 		return self._identity_generator
+
+	def get_var(self, key: IRCSessionVariable):
+		return self._variables[key]
 
 	async def _connect(self, irc_server):
 		try:

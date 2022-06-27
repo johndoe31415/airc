@@ -21,8 +21,12 @@
 
 import enum
 import asyncio
+import logging
 from airc.IRCMessageHandler import IRCMessageHandler
 from airc.Exceptions import ServerSeveredConnectionException
+from airc.Enums import IRCSessionVariable
+
+_log = logging.getLogger(__spec__.name)
 
 class IRCConnectionState(enum.IntEnum):
 	Established = 0
@@ -76,20 +80,24 @@ class IRCConnection():
 		self._client = self._irc_session.irc_client_class(irc_session = self._irc_session, irc_connection = self)
 		self._pending_responses = [ ]
 
+	@property
+	def irc_server(self):
+		return self._irc_server
+
 	def _rx_message(self, msg):
 		if msg.is_cmdcode("error"):
 			# Server aborted connection
+			_log.error(f"Server aborted connection with error: {msg}")
 			raise ServerSeveredConnectionException(msg)
-		print(self._pending_responses)
 		self._pending_responses = [ response_obj for response_obj in self._pending_responses if response_obj.feed(msg) ]
 		self._client.handle_msg(msg)
 
 	def tx_message(self, text: str, response: IRCResponse | None = None):
 		print("->", text)
+		_log.debug(f"-> {text}")
 		binmsg = self._msghandler.encode(text)
 		self._writer.write(binmsg)
 		if response is not None:
-			print("HAVE NEW")
 			self._pending_responses.append(response)
 			return response.future
 
@@ -110,17 +118,21 @@ class IRCConnection():
 			rsp = await self.tx_message("PASS %s" % (self._irc_server.password))
 
 		for irc_identity in self._irc_session.identity_generator:
+			_log.debug(f"Registering at server {self._irc_server} using identity {irc_identity}")
+
 			# Attempt to register under this username
 			self.tx_message(f"NICK {irc_identity.nickname}")
-			print("RESPONSE NICK")
 
 			mode = "8"
-			print("WAITING FOR REGISTRATION TO COMPLETE")
-			rsp = await self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {mode} * :{irc_identity.realname or irc_identity.nickname}", response = IRCResponse(finish_cmdcodes = ("MODE", )))
-			print("RESPONSE USER", rsp)
-			print("Registration complete.")
-			break
-
+			try:
+				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {mode} * :{irc_identity.realname or irc_identity.nickname}", response = IRCResponse(finish_cmdcodes = ("MODE", ))), timeout = self._irc_session.get_var(IRCSessionVariable.RegistrationTimeoutSecs))
+			except asyncio.exceptions.TimeoutError:
+				# Registration failed. Retry with next identity
+				_log.error(f"Registeration at server {self._irc_server} using identity {irc_identity} timed out after {self._irc_session.get_var(IRCSessionVariable.RegistrationTimeoutSecs)} seconds.")
+				pass
+			else:
+				_log.info(f"Registeration at server {self._irc_server} using identity {irc_identity} completed successfully.")
+				break
 
 	async def handle(self):
 		self._state = IRCConnectionState.Established
