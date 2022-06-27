@@ -23,3 +23,8 @@ import enum
 
 class IRCSessionVariable(enum.IntEnum):
 	RegistrationTimeoutSecs = 0
+
+class IRCConnectionState(enum.IntEnum):
+	Established = 0
+	Registered = 1
+

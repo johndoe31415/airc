@@ -24,49 +24,10 @@ import asyncio
 import logging
 from airc.IRCMessageHandler import IRCMessageHandler
 from airc.Exceptions import ServerSeveredConnectionException
-from airc.Enums import IRCSessionVariable
+from airc.Enums import IRCSessionVariable, IRCConnectionState
+from airc.IRCResponse import IRCResponse
 
 _log = logging.getLogger(__spec__.name)
-
-class IRCConnectionState(enum.IntEnum):
-	Established = 0
-	Registered = 1
-
-class IRCResponse():
-	def __init__(self, finish_cmdcodes: tuple, record_cmdcodes: tuple | None = None):
-		self._future = asyncio.Future()
-		self._finish_cmdcodes = finish_cmdcodes
-		self._record_cmdcodes = record_cmdcodes
-		self._messages = [ ]
-
-	@property
-	def future(self):
-		return self._future
-
-	@property
-	def finish_cmdcodes(self):
-		return self._finish_cmdcodes
-
-	@property
-	def record_cmdcodes(self):
-		if self._record_cmdcodes is None:
-			return self._finish_cmdcodes
-		else:
-			return self._record_cmdcodes
-
-	def feed(self, msg):
-		do_record = any(msg.is_cmdcode(cmdcode) for cmdcode in self.record_cmdcodes)
-		if do_record:
-			self._messages.append(msg)
-
-		is_finished = any(msg.is_cmdcode(cmdcode) for cmdcode in self.finish_cmdcodes)
-		if is_finished:
-			# This response is done, finalize the future.
-			self._future.set_result(self._messages)
-			return False
-		else:
-			# Want more data
-			return True
 
 class IRCConnection():
 	def __init__(self, irc_session, irc_server, reader, writer):
@@ -132,6 +93,7 @@ class IRCConnection():
 				pass
 			else:
 				_log.info(f"Registeration at server {self._irc_server} using identity {irc_identity} completed successfully.")
+				self._state = IRCConnectionState.Registered
 				break
 
 	async def handle(self):
