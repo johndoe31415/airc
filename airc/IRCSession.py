@@ -25,11 +25,16 @@ from .IRCIdentityGenerator import IRCIdentityGenerator
 from .IRCConnection import IRCConnection
 
 class IRCSession():
-	def __init__(self, irc_servers: list[IRCServer], identity_generator: IRCIdentityGenerator):
+	def __init__(self, irc_client_class, irc_servers: list[IRCServer], identity_generator: IRCIdentityGenerator):
+		self._irc_client_class = irc_client_class
 		self._irc_servers = irc_servers
 		self._identity_generator = identity_generator
 		self._shutdown = False
 		self._connection = None
+
+	@property
+	def irc_client_class(self):
+		return self._irc_client_class
 
 	@property
 	def identity_generator(self):

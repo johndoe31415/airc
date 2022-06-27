@@ -19,6 +19,21 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
-class AsyncIRCException(Exception): pass
-class OutOfValidNicknamesException(AsyncIRCException): pass
-class ServerSeveredConnectionException(AsyncIRCException): pass
+class BasicIRCClient():
+	def __init__(self, irc_session, irc_connection):
+		self._irc_session = irc_session
+		self._irc_connection = irc_connection
+
+	@property
+	def irc_session(self):
+		return self._irc_session
+
+	@property
+	def irc_connection(self):
+		return self._irc_connection
+
+	def handle_msg(self, msg):
+		print("handle", msg)
+		if msg.is_cmdcode("ping"):
+			print("PONG!")
+			self._irc_connection.tx_message("PONG :%s" % (msg.params[0]))
