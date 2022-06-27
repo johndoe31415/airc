@@ -19,7 +19,23 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
-from .IRCServer import IRCServer
-from .IRCIdentity import IRCIdentity
-from .IRCIdentityGenerator import ListIRCIdentityGenerator
-from .IRCSession import IRCSession
+class IRCConnection():
+	def __init__(self, irc_session, irc_server, reader, writer):
+		self._irc_session = irc_session
+		self._irc_server = irc_server
+		self._reader = reader
+		self._writer = writer
+		self._shutdown = False
+
+	def _handle_line(self, line):
+		print(line)
+
+	async def handle(self):
+		while not self._shutdown:
+			line = await self._reader.readline()
+			if len(line) == 0:
+				# Remote disconnected
+				self._shutdown = True
+				self._writer.close()
+				break
+			self._handle_line(line)

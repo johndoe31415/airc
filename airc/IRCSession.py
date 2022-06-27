@@ -19,16 +19,37 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
+import asyncio
 from .IRCServer import IRCServer
 from .IRCIdentityGenerator import IRCIdentityGenerator
+from .IRCConnection import IRCConnection
 
 class IRCSession():
-	def __init__(self, irc_servers = list[IRCServer], identity_generator = IRCIdentityGenerator):
+	def __init__(self, irc_servers: list[IRCServer], identity_generator: IRCIdentityGenerator):
 		self._irc_servers = irc_servers
 		self._identity_generator = identity_generator
+		self._shutdown = False
+		self._connection = None
 
-#	async def _connection_loop(self):
-#		while True:
+	@property
+	def identity_generator(self):
+		return self._identity_generator
+
+	async def _connect(self, irc_server):
+		try:
+			writer = None
+			(reader, writer) = await asyncio.open_connection(host = irc_server.hostname, port = irc_server.port)
+			connection = IRCConnection(self, irc_server, reader, writer)
+			await connection.handle()
+		finally:
+			if writer is not None:
+				writer.close()
+
+	async def _connection_loop(self):
+		while not self._shutdown:
+			for irc_server in self._irc_servers:
+				await self._connect(irc_server)
+
 #			try:
 #				(reader, writer) = await asyncio.open_connection(host = self._hostname, port = self._port)
 #				await self._handle_connection(reader, writer)
@@ -37,7 +58,7 @@ class IRCSession():
 #				print(self._hostname, "errored", e)
 #			print("trying to reconnect...", self._hostname)
 #			await asyncio.sleep(2)
-#
-#	async def task(self):
-#		task = asyncio.create_task(self._connection_loop())
-#		return task
+
+	def task(self):
+		task = asyncio.create_task(self._connection_loop())
+		return task

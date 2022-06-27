@@ -33,3 +33,6 @@ class ListIRCIdentityGenerator():
 	def __iter__(self):
 		yield from self._identities
 		raise OutOfValidNicknamesException(f"Exhausted all {len(self._identities)} nicknames, no more left.")
+
+	def __str__(self):
+		return "%s<%d identities>" % (self.__class__.__name__, len(self._identities))
