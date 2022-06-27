@@ -25,5 +25,19 @@ from airc.IRCServer import IRCServer
 class IRCServerTests(unittest.TestCase):
 	def test_basic_functionality(self):
 		srv = IRCServer(hostname = "google.com", port = 80)
-		print(srv)
+		self.assertEqual(srv.hostname, "google.com")
+		self.assertEqual(srv.port, 80)
 
+	def test_default_values(self):
+		srv = IRCServer(hostname = "freenode.org")
+		self.assertEqual(srv.port, 6666)
+		self.assertFalse(srv.use_ssl)
+		self.assertEqual(srv.password, None)
+
+	def test_ssl(self):
+		srv = IRCServer(hostname = "freenode.org", use_ssl = True)
+		self.assertTrue(srv.use_ssl)
+
+	def test_password(self):
+		srv = IRCServer(hostname = "freenode.org", password = "secret")
+		self.assertEqual(srv.password, "secret")
