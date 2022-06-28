@@ -1,7 +1,12 @@
+# pyirclib
+[![Build Status](https://github.com/johndoe31415/pyirclib/actions/workflows/CI.yml/badge.svg)](https://github.com/johndoe31415/pyirclib/actions/workflows/CI.yml)
+
+
 REWRITE BRANCH ENTIRELY DYSFUNCTIONAL
+
 **THIS IS REWRITTEN FROM SCRATCH**
 
-# pyirclib
+
 pyirclib is a pure Python3-based IRC client that supports DCC file transfers as
 well as anonymization of identity. For example, it contains a list of commonly
 used DCC VERSION responses and their respective frequencies and can connect to
