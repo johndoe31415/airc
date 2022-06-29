@@ -19,10 +19,10 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
-import re
 import logging
 from airc.ReplyCode import ReplyCode
-from airc.Exceptions import ServerMessageParseException
+from airc.Origin import Origin
+from airc.Exceptions import ServerMessageParseException, InvalidOriginException
 
 _log = logging.getLogger(__spec__.name)
 
@@ -50,17 +50,6 @@ class IRCMessage():
 		else:
 			return self.cmdcode == cmdcode
 
-	def is_from_user(self, username = None):
-		"""If username is None, returns True if it's a message from any user
-		(as opposed to a server message)."""
-		if (self._origin is not None) and (self._origin["nickname"] is not None):
-			if username is None:
-				return True
-			else:
-				return self._origin["nickname"].lower() == username.lower()
-		else:
-			return False
-
 	def get_param(self, param_index, default_value = None):
 		if param_index >= len(self._params):
 			return default_value
@@ -77,17 +66,12 @@ class IRCMessage():
 
 	def __str__(self):
 		if self.origin is not None:
-			if self.origin["nickname"] is not None:
-				return "IRCMessage<%s from %s>: %s" % (self.cmdcode, self.origin["nickname"], self.params)
-			else:
-				return "IRCMessage<%s from host %s>: %s" % (self.cmdcode, self.origin["hostname"], self.params)
+			return "IRCMessage<%s from %s>: %s" % (self.cmdcode, self.origin, self.params)
 		else:
 			return "IRCMessage<%s>: %s" % (self.cmdcode, self.params)
 
 
 class IRCMessageHandler():
-	_ORIGIN_REGEX = re.compile(r":((?P<nickname>[^!]+)!(?P<username_is_alias>~?)(?P<username>[^@]+)@)?(?P<hostname>.*)")
-
 	def __init__(self, codec: str = "utf-8"):
 		self._codec = codec
 
@@ -99,14 +83,14 @@ class IRCMessageHandler():
 			msg = text.decode(self._codec).rstrip("\r\n")
 			if msg.startswith(":"):
 				# Have origin
-				(origin, msg) = msg.split(" ", maxsplit = 1)
-				result = self._ORIGIN_REGEX.fullmatch(origin)
-				if result is None:
-					_log.error(f"Could not parse origin string {origin} using regular expression.")
-					origin = None
-				else:
-					origin = result.groupdict()
+				(origin_text, msg) = msg.split(" ", maxsplit = 1)
+				try:
+					origin = Origin.parse(origin_text)
+				except InvalidOriginException as e:
+					_log.error(f"Could not parse origin string {origin_text} using regular expression: {e}")
+					origin = Origin(hostname = origin_text)
 			else:
+				_log.warning(f"Message without origin: {msg}")
 				origin = None
 
 			(cmdcode, params) = msg.split(" ", maxsplit = 1)

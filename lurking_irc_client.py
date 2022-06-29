@@ -46,6 +46,14 @@ class SimpleIRCClient():
 		logging.basicConfig(format = "{name:>40s} [{levelname:.2s}]: {message}", style = "{", level = loglevel)
 
 	async def main(self):
+		class CallbackClass():
+			def __init__(self):
+				pass
+
+			def on_private_message(self, irc_client, origin, message):
+				pass
+
+		cbc = CallbackClass()
 		usr_ctx = {
 			"lurking_channels": [ "#test" ],
 		}
@@ -57,6 +65,7 @@ class SimpleIRCClient():
 			identities = [ airc.IRCIdentity(nickname = nickname) for nickname in self._args.nickname ]
 		idgen = airc.ListIRCIdentityGenerator(identities)
 		session = airc.IRCSession(irc_client_class = airc.client.LurkingIRCClient, irc_servers = irc_servers, identity_generator = idgen, usr_ctx = usr_ctx)
+#		session.add_listener("private_message", cbc.on_private_message)
 		asyncio.ensure_future(session.task())
 		while True:
 			if session.client is not None:

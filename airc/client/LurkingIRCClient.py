@@ -72,14 +72,14 @@ class LurkingIRCClient(BasicIRCClient):
 				nicknames = msg.get_param(3, "").split(" ")
 				for nickname in nicknames:
 					channel.add_user(nickname)
-		elif msg.is_cmdcode("JOIN") and msg.is_from_user():
+		elif msg.is_cmdcode("JOIN") and msg.origin.is_user_msg:
 			channel = self._get_channel(msg.get_param(0))
 			if channel is not None:
-				channel.add_user(msg.origin["nickname"])
-		elif msg.is_cmdcode("PART") and msg.is_from_user():
+				channel.add_user(msg.origin.nickname)
+		elif msg.is_cmdcode("PART") and msg.origin.is_user_msg:
 			channel = self._get_channel(msg.get_param(0))
 			if channel is not None:
-				channel.remove_user(msg.origin["nickname"])
-		elif msg.is_cmdcode("NICK") and msg.is_from_user():
+				channel.remove_user(msg.origin.nickname)
+		elif msg.is_cmdcode("NICK") and msg.origin.is_user_msg:
 			for channel in self._channels.values():
-				channel.rename_user(msg.origin["nickname"], msg.get_param(0))
+				channel.rename_user(msg.origin.nickname, msg.get_param(0))

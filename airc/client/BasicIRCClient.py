@@ -46,6 +46,12 @@ class BasicIRCClient():
 	def irc_connection(self):
 		return self._irc_connection
 
+	def privmsg(self, nickname, msg):
+		self._irc_connection.tx_message(f"PRIVMSG {nickname} :{msg}")
+
+	def notice(self, nickname, msg):
+		self._irc_connection.tx_message(f"NOTICE {nickname} :{msg}")
+
 	def handle_msg(self, msg):
 		if msg.is_cmdcode("ping"):
 			data = msg.params[0]
