@@ -53,7 +53,7 @@ class SimpleIRCClient():
 		else:
 			identities = [ airc.IRCIdentity(nickname = nickname) for nickname in self._args.nickname ]
 		idgen = airc.ListIRCIdentityGenerator(identities)
-		sess = airc.IRCSession(irc_client_class = airc.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen)
+		sess = airc.IRCSession(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen)
 		task = sess.task()
 		await task
 
