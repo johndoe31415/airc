@@ -47,6 +47,7 @@ class IRCSession():
 			IRCSessionVariable.ReconnectTimeAfterServerParseExceptionSecs:		10,
 			IRCSessionVariable.ReconnectTimeAfterTLSErrorSecs:					10,
 			IRCSessionVariable.JoinChannelTimeoutSecs:							20,
+			IRCSessionVariable.RejoinChannelTimeSecs:							10,
 		}
 		self._usr_ctx = usr_ctx
 		self._callbacks = collections.defaultdict(list)

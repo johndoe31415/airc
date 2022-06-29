@@ -55,7 +55,7 @@ class SimpleIRCClient():
 
 		cbc = CallbackClass()
 		usr_ctx = {
-			"lurking_channels": [ "#test" ],
+			"lurking_channels": [ "#mytest" ],
 		}
 		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, use_ssl = self._args.use_tls)
 		irc_servers = [ irc_server ]

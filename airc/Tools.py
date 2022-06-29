@@ -19,22 +19,20 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
-import enum
+import collections
+from airc.Enums import Usermode
 
-class IRCSessionVariable(enum.IntEnum):
-	RegistrationTimeoutSecs = 0
-	ReconnectTimeAfterNicknameExhaustionSecs = 1
-	ReconnectTimeAfterConnectionErrorSecs = 2
-	ReconnectTimeAfterSeveredConnectionSecs = 3
-	ReconnectTimeAfterServerParseExceptionSecs = 4
-	ReconnectTimeAfterTLSErrorSecs = 5
-	JoinChannelTimeoutSecs = 6
-	RejoinChannelTimeSecs = 7
+class NameTools():
+	_Nickname = collections.namedtuple("Nickname", [ "nickname", "mode" ])
 
-class IRCCallbackType(enum.Enum):
-	PrivateMessage = "privmsg"
-
-class Usermode(enum.IntEnum):
-	Regular = 0
-	Voice = 1
-	Op = 2
+	@classmethod
+	def parse_nickname(cls, nickname):
+		if nickname.startswith("@"):
+			nickname = nickname[1:]
+			mode = Usermode.Op
+		elif nickname.startswith("+"):
+			nickname = nickname[1:]
+			mode = Usermode.Voice
+		else:
+			mode = Usermode.Regular
+		return cls._Nickname(nickname = nickname, mode = mode)

@@ -20,9 +20,11 @@
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
 import contextlib
+from airc.EventObject import EventObject
 
-class Channel():
+class Channel(EventObject):
 	def __init__(self, channel_name: str):
+		super().__init__()
 		self._channel_name = channel_name
 		self._joined = False
 		self._users = set()
@@ -41,7 +43,10 @@ class Channel():
 
 	@joined.setter
 	def joined(self, value: bool):
+		change = self._joined != value
 		self._joined = value
+		if change:
+			self.signal()
 
 	def add_user(self, nickname: str):
 		self._users.add(nickname)
@@ -56,4 +61,9 @@ class Channel():
 			self._users.add(new_nickname)
 
 	def __str__(self):
-		return "Channel<%s, %d users: %s>" % (self.name, len(self._users), " ".join(sorted(self.users)))
+		if not self.joined:
+			return f"Channel<{self.name}, unjoined>"
+		elif len(self._users) == 0:
+			return f"Channel<{self.name}, no users>"
+		else:
+			return "Channel<%s, %d users: %s>" % (self.name, len(self._users), " ".join(sorted(self.users)))

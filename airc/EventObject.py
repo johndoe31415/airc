@@ -19,22 +19,21 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
-import enum
+import asyncio
 
-class IRCSessionVariable(enum.IntEnum):
-	RegistrationTimeoutSecs = 0
-	ReconnectTimeAfterNicknameExhaustionSecs = 1
-	ReconnectTimeAfterConnectionErrorSecs = 2
-	ReconnectTimeAfterSeveredConnectionSecs = 3
-	ReconnectTimeAfterServerParseExceptionSecs = 4
-	ReconnectTimeAfterTLSErrorSecs = 5
-	JoinChannelTimeoutSecs = 6
-	RejoinChannelTimeSecs = 7
+class EventObject():
+	def __init__(self):
+		self.__events = { }
 
-class IRCCallbackType(enum.Enum):
-	PrivateMessage = "privmsg"
+	def __get_event(self, name):
+		if name not in self.__events:
+			self.__events[name] = asyncio.Event()
+		return self.__events[name]
 
-class Usermode(enum.IntEnum):
-	Regular = 0
-	Voice = 1
-	Op = 2
+	def event(self, name = "default"):
+		return self.__get_event(name).wait()
+
+	def signal(self, name = "default"):
+		event = self.__get_event(name)
+		event.set()
+		event.clear()
