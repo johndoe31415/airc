@@ -24,7 +24,7 @@ import asyncio
 import logging
 from airc.IRCMessageHandler import IRCMessageHandler
 from airc.Exceptions import ServerSeveredConnectionException
-from airc.Enums import IRCSessionVariable, IRCConnectionState
+from airc.Enums import IRCSessionVariable
 from airc.IRCResponse import IRCResponse
 from airc.ReplyCode import ReplyCode
 

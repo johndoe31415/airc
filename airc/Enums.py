@@ -30,7 +30,5 @@ class IRCSessionVariable(enum.IntEnum):
 	ReconnectTimeAfterTLSErrorSecs = 5
 	JoinChannelTimeoutSecs = 6
 
-class IRCConnectionState(enum.IntEnum):
-	Established = 0
-	Registered = 1
-
+class IRCCallbackHandlers(enum.Enum):
+	PrivateMessage = "privmsg"
