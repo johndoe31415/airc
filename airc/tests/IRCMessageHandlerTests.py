@@ -31,14 +31,19 @@ class IRCMessageHandlerTests(unittest.TestCase):
 		text = b":blah!~moo@freenode.net PING :foobar\r\n"
 		msg = self._imh.parse(text)
 		self.assertTrue(msg.is_cmdcode("pInG"))
-		self.assertEqual(msg.origin["nickname"], "blah")
-		self.assertEqual(msg.origin["username"], "moo")
-		self.assertEqual(msg.origin["hostname"], "freenode.net")
+		self.assertEqual(msg.origin.nickname, "blah")
+		self.assertEqual(msg.origin.username, "moo")
+		self.assertEqual(msg.origin.hostname, "freenode.net")
+		self.assertTrue(msg.origin.has_nickname("bLaH"))
+		self.assertTrue(msg.origin.is_user_msg)
+		self.assertFalse(msg.origin.is_server_msg)
 		self.assertEqual(msg.params, [ "foobar" ])
 
 	def test_bounce(self):
 		text = b":*.freenode.net 005 neo ACCEPT=30 AWAYLEN=200 BOT=B CALLERID=g CASEMAPPING=ascii CHANLIMIT=#:20 CHANMODES=IXZbew,k,BEFJLWdfjl,ACDKMNOPQRSTUcimnprstuz CHANNELLEN=64 CHANTYPES=# ELIST=CMNTU ESILENCE=CcdiNnPpTtx EXCEPTS=e :are supported by this server\r\n"
 		msg = self._imh.parse(text)
 		self.assertTrue(msg.is_cmdcode(ReplyCode.RPL_BOUNCE))
-		self.assertEqual(msg.origin["hostname"], "*.freenode.net")
+		self.assertEqual(msg.origin.hostname, "*.freenode.net")
+		self.assertFalse(msg.origin.is_user_msg)
+		self.assertTrue(msg.origin.is_server_msg)
 		self.assertEqual(msg.params, [ "neo", "ACCEPT=30", "AWAYLEN=200", "BOT=B", "CALLERID=g", "CASEMAPPING=ascii", "CHANLIMIT=#:20", "CHANMODES=IXZbew,k,BEFJLWdfjl,ACDKMNOPQRSTUcimnprstuz", "CHANNELLEN=64", "CHANTYPES=#", "ELIST=CMNTU", "ESILENCE=CcdiNnPpTtx", "EXCEPTS=e", "are supported by this server" ])
