@@ -53,9 +53,6 @@ class BasicIRCClient():
 		self._irc_connection.tx_message(f"NOTICE {nickname} :{msg}")
 
 	def handle_msg(self, msg):
-		if msg.origin is None:
-			return
-
 		if msg.is_cmdcode("ping"):
 			data = msg.params[0]
 			_log.debug(f"Sending PONG reply to PING request ({data}) on {self._irc_connection.irc_server}.")

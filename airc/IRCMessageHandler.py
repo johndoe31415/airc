@@ -90,7 +90,6 @@ class IRCMessageHandler():
 					_log.error(f"Could not parse origin string {origin_text} using regular expression: {e}")
 					origin = Origin(hostname = origin_text)
 			else:
-				_log.warning(f"Message without origin: {msg}")
 				origin = None
 
 			(cmdcode, params) = msg.split(" ", maxsplit = 1)
