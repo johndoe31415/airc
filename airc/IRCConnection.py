@@ -113,6 +113,5 @@ class IRCConnection():
 				pass
 
 	async def handle(self):
-		self._state = IRCConnectionState.Established
 		rx_task = asyncio.create_task(self._handle_rx())
 		await asyncio.gather(self._register(), rx_task)
