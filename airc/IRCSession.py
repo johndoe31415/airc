@@ -76,6 +76,9 @@ class IRCSession():
 	def add_listener(self, callback_type: IRCCallbackType, callback):
 		self._callbacks[callback_type].append(callback)
 
+	def get_listeners(self, callback_type: IRCCallbackType):
+		return iter(self._callbacks.get(callback_type, [ ]))
+
 	def get_var(self, key: IRCSessionVariable):
 		return self._variables[key]
 

@@ -19,7 +19,9 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
+import asyncio
 import logging
+from airc.Enums import IRCCallbackType
 
 _log = logging.getLogger(__spec__.name)
 
@@ -46,17 +48,21 @@ class BasicIRCClient():
 	def irc_connection(self):
 		return self._irc_connection
 
-	def privmsg(self, nickname, msg):
-		self._irc_connection.tx_message(f"PRIVMSG {nickname} :{msg}")
+	def fire_callback(self, callback_type: IRCCallbackType, *args):
+		for callback in self.irc_session.get_listeners(callback_type):
+			asyncio.ensure_future(callback(self, *args))
 
-	def notice(self, nickname, msg):
-		self._irc_connection.tx_message(f"NOTICE {nickname} :{msg}")
+	def privmsg(self, nickname, text):
+		self._irc_connection.tx_message(f"PRIVMSG {nickname} :{text}")
+
+	def notice(self, nickname, text):
+		self._irc_connection.tx_message(f"NOTICE {nickname} :{text}")
 
 	def handle_msg(self, msg):
 		if msg.is_cmdcode("ping"):
 			data = msg.params[0]
 			_log.debug(f"Sending PONG reply to PING request ({data}) on {self._irc_connection.irc_server}.")
 			self._irc_connection.tx_message("PONG :%s" % (data))
-		elif msg.is_cmdcode("nick") and msg.origin.is_from_nickname(self.our_nickname):
+		elif msg.is_cmdcode("nick") and msg.origin.has_nickname(self.our_nickname):
 			# Server changed our nickname
 			self.our_nickname = msg.params[0]

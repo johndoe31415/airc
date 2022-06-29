@@ -24,7 +24,7 @@ import logging
 from airc.Channel import Channel
 from airc.IRCResponse import IRCResponse
 from .BasicIRCClient import BasicIRCClient
-from airc.Enums import IRCSessionVariable
+from airc.Enums import IRCSessionVariable, IRCCallbackType
 from airc.ReplyCode import ReplyCode
 
 _log = logging.getLogger(__spec__.name)
@@ -87,3 +87,6 @@ class LurkingIRCClient(BasicIRCClient):
 		elif msg.is_cmdcode("NICK") and msg.origin.is_user_msg:
 			for channel in self._channels.values():
 				channel.rename_user(msg.origin.nickname, msg.get_param(0))
+		elif msg.is_cmdcode("PRIVMSG") and msg.origin.is_user_msg:
+			# We received a private message
+			self.fire_callback(IRCCallbackType.PrivateMessage, msg.origin.nickname, msg.get_param(1))

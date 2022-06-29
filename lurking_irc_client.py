@@ -50,8 +50,8 @@ class SimpleIRCClient():
 			def __init__(self):
 				pass
 
-			def on_private_message(self, irc_client, origin, message):
-				pass
+			async def on_private_message(self, irc_client, nickname, text):
+				irc_client.privmsg(nickname, f"you said '{text}', {nickname}, that's not nice")
 
 		cbc = CallbackClass()
 		usr_ctx = {
@@ -73,8 +73,8 @@ class SimpleIRCClient():
 			await asyncio.sleep(1)
 
 parser = FriendlyArgumentParser(description = "Simple IRC client.")
-parser.add_argument("-H", "--hostname", metavar = "hostname", default = "irc.freenode.org", help = "Specifies hostname to connect to. Defaults to %(default)s.")
-parser.add_argument("-p", "--port", metavar = "port", type = int, default = 6666, help = "Specifies port to connect to. Defaults to %(default)d.")
+parser.add_argument("-H", "--hostname", metavar = "hostname", default = "irc.irclink.net", help = "Specifies hostname to connect to. Defaults to %(default)s.")
+parser.add_argument("-p", "--port", metavar = "port", type = int, default = 6667, help = "Specifies port to connect to. Defaults to %(default)d.")
 parser.add_argument("-s", "--use-tls", action = "store_true", help = "Connect using TLS to the server.")
 parser.add_argument("-n", "--nickname", metavar = "nick", action = "append", default = [ ], help = "Nickname(s) to use. Multiple fallbacks can be specified. By default, a randomized nickname is used.")
 parser.add_argument("-v", "--verbose", action = "count", default = 0, help = "Increases verbosity. Can be specified multiple times to increase.")
