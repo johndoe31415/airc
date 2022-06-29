@@ -32,7 +32,7 @@ from airc.Exceptions import OutOfValidNicknamesException, ServerSeveredConnectio
 _log = logging.getLogger(__spec__.name)
 
 class IRCSession():
-	def __init__(self, irc_client_class, irc_servers: list[IRCServer], identity_generator: IRCIdentityGenerator):
+	def __init__(self, irc_client_class, irc_servers: list[IRCServer], identity_generator: IRCIdentityGenerator, usr_ctx = None):
 		self._irc_client_class = irc_client_class
 		self._irc_servers = irc_servers
 		self._identity_generator = identity_generator
@@ -45,11 +45,17 @@ class IRCSession():
 			IRCSessionVariable.ReconnectTimeAfterSeveredConnectionSecs:			15,
 			IRCSessionVariable.ReconnectTimeAfterServerParseExceptionSecs:		10,
 			IRCSessionVariable.ReconnectTimeAfterTLSErrorSecs:					10,
+			IRCSessionVariable.JoinChannelTimeoutSecs:							20,
 		}
+		self._usr_ctx = usr_ctx
 
 	@property
 	def irc_client_class(self):
 		return self._irc_client_class
+
+	@property
+	def usr_ctx(self):
+		return self._usr_ctx
 
 	@property
 	def identity_generator(self):

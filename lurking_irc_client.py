@@ -46,6 +46,9 @@ class SimpleIRCClient():
 		logging.basicConfig(format = "{name:>40s} [{levelname:.2s}]: {message}", style = "{", level = loglevel)
 
 	async def main(self):
+		usr_ctx = {
+			"lurking_channels": [ "#test" ],
+		}
 		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, use_ssl = self._args.use_tls)
 		irc_servers = [ irc_server ]
 		if len(self._args.nickname) == 0:
@@ -53,7 +56,7 @@ class SimpleIRCClient():
 		else:
 			identities = [ airc.IRCIdentity(nickname = nickname) for nickname in self._args.nickname ]
 		idgen = airc.ListIRCIdentityGenerator(identities)
-		sess = airc.IRCSession(irc_client_class = airc.client.LurkingIRCClient, irc_servers = irc_servers, identity_generator = idgen)
+		sess = airc.IRCSession(irc_client_class = airc.client.LurkingIRCClient, irc_servers = irc_servers, identity_generator = idgen, usr_ctx = usr_ctx)
 		task = sess.task()
 		await task
 

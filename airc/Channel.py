@@ -19,18 +19,29 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
-import enum
+import contextlib
 
-class IRCSessionVariable(enum.IntEnum):
-	RegistrationTimeoutSecs = 0
-	ReconnectTimeAfterNicknameExhaustionSecs = 1
-	ReconnectTimeAfterConnectionErrorSecs = 2
-	ReconnectTimeAfterSeveredConnectionSecs = 3
-	ReconnectTimeAfterServerParseExceptionSecs = 4
-	ReconnectTimeAfterTLSErrorSecs = 5
-	JoinChannelTimeoutSecs = 6
+class Channel():
+	def __init__(self, channel_name: str):
+		self._channel_name = channel_name
+		self._joined = False
+		self._users = set()
 
-class IRCConnectionState(enum.IntEnum):
-	Established = 0
-	Registered = 1
+	@property
+	def name(self):
+		return self._channel_name
 
+	@property
+	def joined(self):
+		return self._joined
+
+	@joined.setter
+	def joined(self, value: bool):
+		self._joined = value
+
+	def add_user(self, nickname: str):
+		self._users.add(nickname)
+
+	def remove_user(self, nickname: str):
+		with contextlib.suppress(KeyError):
+			self._users.remove(nickname)

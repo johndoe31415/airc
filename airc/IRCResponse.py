@@ -21,37 +21,52 @@
 
 import asyncio
 
+class Mock():
+	pass
+	def is_cmdcode(self, cmdcode):
+		print("vergleich mit", cmdcode)
+		return False
+
 class IRCResponse():
-	def __init__(self, finish_cmdcodes: tuple, record_cmdcodes: tuple | None = None):
+	def __init__(self, finish_conditions: tuple, record_conditions: tuple | None = None):
 		self._future = asyncio.Future()
-		self._finish_cmdcodes = finish_cmdcodes
-		self._record_cmdcodes = record_cmdcodes
+		self._finish_conditions = finish_conditions
+		self._record_conditions = record_conditions
 		self._messages = [ ]
+
+	@classmethod
+	def on_cmdcode(cls, finish_cmdcodes: tuple, record_cmdcodes: tuple | None = None):
+		finish_conditions = tuple(lambda msg, cmdcode = cmdcode: msg.is_cmdcode(cmdcode) for cmdcode in finish_cmdcodes)
+		if record_cmdcodes is not None:
+			record_conditions = tuple(lambda msg, cmdcode = cmdcode: msg.is_cmdcode(cmdcode) for cmdcode in record_cmdcodes)
+		else:
+			record_conditions = None
+		return cls(finish_conditions = finish_conditions, record_conditions = record_conditions)
 
 	@property
 	def future(self):
 		return self._future
 
 	@property
-	def finish_cmdcodes(self):
-		return self._finish_cmdcodes
+	def finish_conditions(self):
+		return self._finish_conditions
 
 	@property
-	def record_cmdcodes(self):
-		if self._record_cmdcodes is None:
-			return self._finish_cmdcodes
+	def record_conditions(self):
+		if self._record_conditions is None:
+			return self._finish_conditions
 		else:
-			return self._record_cmdcodes
+			return self._record_conditions
 
 	def feed(self, msg):
-		do_record = any(msg.is_cmdcode(cmdcode) for cmdcode in self.record_cmdcodes)
+		do_record = any(condition(msg) for condition in self.record_conditions)
 		if do_record:
 			self._messages.append(msg)
 
 		if self._future.done():
 			return False
 
-		is_finished = any(msg.is_cmdcode(cmdcode) for cmdcode in self.finish_cmdcodes)
+		is_finished = any(condition(msg) for condition in self.finish_conditions)
 		if is_finished:
 			# This response is done, finalize the future.
 			self._future.set_result(self._messages)

@@ -53,6 +53,20 @@ class IRCMessage():
 	def is_from_user(self, username):
 		return (self._origin is not None) and (self._origin["nickname"].lower() == username.lower())
 
+	def get_param(self, param_index, default_value = None):
+		if param_index >= len(self._params):
+			return default_value
+		return self._params[param_index]
+
+	def has_param(self, param_index, value, ignore_case = False):
+		param_value = self.get_param(param_index)
+		if param_value is None:
+			return False
+		if ignore_case:
+			param_value = param_value.lower()
+			value = value.lower()
+		return param_value == value
+
 	def __str__(self):
 		if self.origin is not None:
 			if self.origin["nickname"] is not None:
