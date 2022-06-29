@@ -64,7 +64,7 @@ class SimpleIRCClient():
 		else:
 			identities = [ airc.IRCIdentity(nickname = nickname) for nickname in self._args.nickname ]
 		idgen = airc.ListIRCIdentityGenerator(identities)
-		session = airc.IRCSession(irc_client_class = airc.client.LurkingIRCClient, irc_servers = irc_servers, identity_generator = idgen, usr_ctx = usr_ctx)
+		session = airc.IRCSession(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen, usr_ctx = usr_ctx)
 		session.add_listener(airc.Enums.IRCCallbackType.PrivateMessage, cbc.on_private_message)
 		asyncio.ensure_future(session.task())
 		while True:

@@ -19,5 +19,5 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
+from .RawIRCClient import RawIRCClient
 from .BasicIRCClient import BasicIRCClient
-from .LurkingIRCClient import LurkingIRCClient
