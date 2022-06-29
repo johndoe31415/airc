@@ -43,6 +43,10 @@ class IRCConnection():
 		self._pending_responses = [ ]
 
 	@property
+	def client(self):
+		return self._client
+
+	@property
 	def irc_server(self):
 		return self._irc_server
 

@@ -54,6 +54,16 @@ class IRCSession():
 		return self._irc_client_class
 
 	@property
+	def connection(self):
+		return self._connection
+
+	@property
+	def client(self):
+		if self.connection is None:
+			return None
+		return self.connection.client
+
+	@property
 	def usr_ctx(self):
 		return self._usr_ctx
 
@@ -69,11 +79,12 @@ class IRCSession():
 		try:
 			writer = None
 			(reader, writer) = await asyncio.open_connection(host = irc_server.hostname, port = irc_server.port, ssl = irc_server.ssl_ctx)
-			connection = IRCConnection(self, irc_server, reader, writer)
-			await connection.handle()
+			self._connection = IRCConnection(self, irc_server, reader, writer)
+			await self._connection.handle()
 		finally:
 			if writer is not None:
 				writer.close()
+			self._connection = None
 
 	async def _connection_loop(self):
 		while not self._shutdown:

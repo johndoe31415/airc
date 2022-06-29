@@ -56,9 +56,12 @@ class SimpleIRCClient():
 		else:
 			identities = [ airc.IRCIdentity(nickname = nickname) for nickname in self._args.nickname ]
 		idgen = airc.ListIRCIdentityGenerator(identities)
-		sess = airc.IRCSession(irc_client_class = airc.client.LurkingIRCClient, irc_servers = irc_servers, identity_generator = idgen, usr_ctx = usr_ctx)
-		task = sess.task()
-		await task
+		session = airc.IRCSession(irc_client_class = airc.client.LurkingIRCClient, irc_servers = irc_servers, identity_generator = idgen, usr_ctx = usr_ctx)
+		asyncio.ensure_future(session.task())
+		while True:
+			if session.client is not None:
+				print([ str(chan) for chan in session.client.channels.values() ])
+			await asyncio.sleep(1)
 
 parser = FriendlyArgumentParser(description = "Simple IRC client.")
 parser.add_argument("-H", "--hostname", metavar = "hostname", default = "irc.freenode.org", help = "Specifies hostname to connect to. Defaults to %(default)s.")

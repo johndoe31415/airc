@@ -35,6 +35,10 @@ class Channel():
 	def joined(self):
 		return self._joined
 
+	@property
+	def users(self):
+		return iter(self._users)
+
 	@joined.setter
 	def joined(self, value: bool):
 		self._joined = value
@@ -45,3 +49,6 @@ class Channel():
 	def remove_user(self, nickname: str):
 		with contextlib.suppress(KeyError):
 			self._users.remove(nickname)
+
+	def __str__(self):
+		return "Channel<%s, %d users: %s>" % (self.name, len(self._users), " ".join(sorted(self.users)))

@@ -53,8 +53,8 @@ class SimpleIRCClient():
 		else:
 			identities = [ airc.IRCIdentity(nickname = nickname) for nickname in self._args.nickname ]
 		idgen = airc.ListIRCIdentityGenerator(identities)
-		sess = airc.IRCSession(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen)
-		task = sess.task()
+		session = airc.IRCSession(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen)
+		task = session.task()
 		await task
 
 parser = FriendlyArgumentParser(description = "Simple IRC client.")

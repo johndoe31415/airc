@@ -35,6 +35,10 @@ class LurkingIRCClient(BasicIRCClient):
 		asyncio.ensure_future(asyncio.create_task(self._lurking_coroutine()))
 		self._channels = { }
 
+	@property
+	def channels(self):
+		return self._channels
+
 	async def _join_channel_loop(self, channel_name):
 		channel = Channel(channel_name)
 		self._channels[channel_name.lower()] = channel
