@@ -19,5 +19,21 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
+import asyncio
+import logging
 from .BasicIRCClient import BasicIRCClient
-from .LurkingIRCClient import LurkingIRCClient
+
+_log = logging.getLogger(__spec__.name)
+
+class LurkingIRCClient(BasicIRCClient):
+	def __init__(self, irc_session, irc_connection):
+		super().__init__(irc_session, irc_connection)
+		asyncio.ensure_future(asyncio.create_task(self._lurking_loop()))
+
+	async def _lurking_loop(self):
+		await self._irc_connection.registration_complete.wait()
+		while True:
+			await asyncio.sleep(1)
+
+	def handle_msg(self, msg):
+		super().handle_msg(msg)

@@ -37,7 +37,7 @@ class IRCConnection():
 		self._reader = reader
 		self._writer = writer
 		self._shutdown = False
-		self._state = None
+		self._registration_complete = asyncio.Event()
 		self._msghandler = IRCMessageHandler()
 		self._client = self._irc_session.irc_client_class(irc_session = self._irc_session, irc_connection = self)
 		self._pending_responses = [ ]
@@ -45,6 +45,10 @@ class IRCConnection():
 	@property
 	def irc_server(self):
 		return self._irc_server
+
+	@property
+	def registration_complete(self):
+		return self._registration_complete
 
 	def _rx_message(self, msg):
 		if msg.is_cmdcode("error"):
@@ -91,7 +95,7 @@ class IRCConnection():
 				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {hostname} {servername} :{irc_identity.realname or irc_identity.nickname}", response = IRCResponse(finish_cmdcodes = ("MODE", ReplyCode.ERR_NICKNAMEINUSE, ReplyCode.ERR_ERRONEUSNICKNAME))), timeout = self._irc_session.get_var(IRCSessionVariable.RegistrationTimeoutSecs))
 				if rsp[0].is_cmdcode("MODE"):
 					_log.info(f"Registeration at server {self._irc_server} using identity {irc_identity} completed successfully.")
-					self._state = IRCConnectionState.Registered
+					self._registration_complete.set()
 					self._client.our_nickname = rsp[0].params[0]
 					break
 				elif rsp[0].is_cmdcode(ReplyCode.ERR_NICKNAMEINUSE):
