@@ -24,7 +24,7 @@ import logging
 from airc.Channel import Channel
 from airc.IRCResponse import IRCResponse
 from .RawIRCClient import RawIRCClient
-from airc.Enums import IRCSessionVariable, IRCCallbackType
+from airc.Enums import IRCTimeout, IRCCallbackType
 from airc.ReplyCode import ReplyCode
 from airc.Tools import NameTools
 
@@ -33,7 +33,7 @@ _log = logging.getLogger(__spec__.name)
 class BasicIRCClient(RawIRCClient):
 	def __init__(self, irc_session, irc_connection):
 		super().__init__(irc_session, irc_connection)
-		asyncio.ensure_future(asyncio.create_task(self._lurking_coroutine()))
+		asyncio.ensure_future(asyncio.create_task(self._autojoin_channel_coroutine()))
 		self._channels = { }
 
 	@property
@@ -47,10 +47,10 @@ class BasicIRCClient(RawIRCClient):
 			if not channel.joined:
 				finish_conditions = tuple([lambda msg: msg.has_param(0, channel.name, ignore_case = True) and msg.is_cmdcode("JOIN") ])
 				try:
-					rsp = await asyncio.wait_for(self._irc_connection.tx_message(f"JOIN {channel.name}", response = IRCResponse(finish_conditions = finish_conditions)), timeout = self._irc_session.get_var(IRCSessionVariable.JoinChannelTimeoutSecs))
+					rsp = await asyncio.wait_for(self._irc_connection.tx_message(f"JOIN {channel.name}", response = IRCResponse(finish_conditions = finish_conditions)), timeout = self._irc_session.client_configuration.timeout(IRCTimeout.JoinChannelTimeoutSecs))
 					channel.joined = True
 				except asyncio.exceptions.TimeoutError:
-					delay = self._irc_session.get_var(IRCSessionVariable.JoinChannelTimeoutSecs)
+					delay = self._irc_session.client_configuration.timeout(IRCTimeout.JoinChannelTimeoutSecs)
 					_log.error(f"Joining of {channel.name} timed out, waiting for {delay} seconds before retrying.")
 					await asyncio.sleep(delay)
 
@@ -58,13 +58,13 @@ class BasicIRCClient(RawIRCClient):
 			await channel.event()
 			if joined_before and (not channel.joined):
 				# We were kicked. Delay and retry
-				delay = self._irc_session.get_var(IRCSessionVariable.RejoinChannelTimeSecs)
+				delay = self._irc_session.client_configuration.timeout(IRCTimeout.RejoinChannelTimeSecs)
 				_log.info(f"Will rejoin {channel.name} after {delay} seconds.")
 				await asyncio.sleep(delay)
 
-	async def _lurking_coroutine(self):
+	async def _autojoin_channel_coroutine(self):
 		await self._irc_connection.registration_complete.wait()
-		for channel_name in self.irc_session.usr_ctx["lurking_channels"]:
+		for channel_name in self.irc_session.client_configuration.autojoin_channels:
 			asyncio.ensure_future(asyncio.create_task(self._join_channel_loop(channel_name)))
 
 	def _get_channel(self, channel_name):
@@ -119,3 +119,12 @@ class BasicIRCClient(RawIRCClient):
 					self.fire_callback(IRCCallbackType.CTCPRequest, msg.origin.nickname, text)
 			else:
 				self.fire_callback(IRCCallbackType.PrivateMessage, msg.origin.nickname, text)
+		elif msg.is_cmdcode("NOTICE") and msg.origin.is_user_msg:
+			# We received a notice
+			text = msg.get_param(1)
+			if (len(text) >= 2) and text.startswith("\x01") and text.endswith("\x01"):
+				text = text[1 : -1]
+				if self._handle_ctcp_reply(msg.origin.nickname, text):
+					self.fire_callback(IRCCallbackType.CTCPReply, msg.origin.nickname, text)
+			else:
+				self.fire_callback(IRCCallbackType.Notice, msg.origin.nickname, text)

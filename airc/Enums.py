@@ -21,7 +21,7 @@
 
 import enum
 
-class IRCSessionVariable(enum.IntEnum):
+class IRCTimeout(enum.IntEnum):
 	RegistrationTimeoutSecs = 0
 	ReconnectTimeAfterNicknameExhaustionSecs = 1
 	ReconnectTimeAfterConnectionErrorSecs = 2
@@ -33,6 +33,9 @@ class IRCSessionVariable(enum.IntEnum):
 
 class IRCCallbackType(enum.Enum):
 	PrivateMessage = "privmsg"
+	Notice = "notice"
+	CTCPRequest = "ctcp_request"
+	CTCPReply = "ctcp_reply"
 
 class Usermode(enum.IntEnum):
 	Regular = 0

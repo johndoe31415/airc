@@ -54,9 +54,9 @@ class SimpleIRCClient():
 				irc_client.privmsg(nickname, f"you said '{text}', {nickname}, that's not nice")
 
 		cbc = CallbackClass()
-		usr_ctx = {
-			"lurking_channels": [ "#mytest" ],
-		}
+		client_configuration = airc.client.ClientConfiguration()
+		client_configuration.add_autojoin_channel("#mytest")
+
 		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, use_ssl = self._args.use_tls)
 		irc_servers = [ irc_server ]
 		if len(self._args.nickname) == 0:
@@ -64,7 +64,7 @@ class SimpleIRCClient():
 		else:
 			identities = [ airc.IRCIdentity(nickname = nickname) for nickname in self._args.nickname ]
 		idgen = airc.ListIRCIdentityGenerator(identities)
-		session = airc.IRCSession(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen, usr_ctx = usr_ctx)
+		session = airc.IRCSession(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen, client_configuration = client_configuration)
 		session.add_listener(airc.Enums.IRCCallbackType.PrivateMessage, cbc.on_private_message)
 		asyncio.ensure_future(session.task())
 		while True:

@@ -19,5 +19,6 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
+from .ClientConfiguration import ClientConfiguration
 from .RawIRCClient import RawIRCClient
 from .BasicIRCClient import BasicIRCClient

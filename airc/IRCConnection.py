@@ -24,7 +24,7 @@ import asyncio
 import logging
 from airc.IRCMessageHandler import IRCMessageHandler
 from airc.Exceptions import ServerSeveredConnectionException
-from airc.Enums import IRCSessionVariable
+from airc.Enums import IRCTimeout
 from airc.IRCResponse import IRCResponse
 from airc.ReplyCode import ReplyCode
 
@@ -96,7 +96,7 @@ class IRCConnection():
 			try:
 				hostname = "localhost"
 				servername = "*"
-				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {hostname} {servername} :{irc_identity.realname or irc_identity.nickname}", response = IRCResponse.on_cmdcode(finish_cmdcodes = ("MODE", ReplyCode.ERR_NICKNAMEINUSE, ReplyCode.ERR_ERRONEUSNICKNAME))), timeout = self._irc_session.get_var(IRCSessionVariable.RegistrationTimeoutSecs))
+				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {hostname} {servername} :{irc_identity.realname or irc_identity.nickname}", response = IRCResponse.on_cmdcode(finish_cmdcodes = ("MODE", ReplyCode.ERR_NICKNAMEINUSE, ReplyCode.ERR_ERRONEUSNICKNAME))), timeout = self._irc_session.client_configuration.timeout(IRCTimeout.RegistrationTimeoutSecs))
 				if rsp[0].is_cmdcode("MODE"):
 					_log.info(f"Registeration at server {self._irc_server} using identity {irc_identity} completed successfully.")
 					self._registration_complete.set()
@@ -109,7 +109,7 @@ class IRCConnection():
 				continue
 			except asyncio.exceptions.TimeoutError:
 				# Registration failed. Retry with next identity
-				_log.error(f"Registration at server {self._irc_server} using identity {irc_identity} timed out after {self._irc_session.get_var(IRCSessionVariable.RegistrationTimeoutSecs)} seconds.")
+				_log.error(f"Registration at server {self._irc_server} using identity {irc_identity} timed out after {self._irc_session.client_configuration.timeout(IRCTimeout.RegistrationTimeoutSecs)} seconds.")
 				pass
 
 	async def handle(self):
