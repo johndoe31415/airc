@@ -59,11 +59,27 @@ class LurkingIRCClient(BasicIRCClient):
 		for channel_name in self.irc_session.usr_ctx["lurking_channels"]:
 			asyncio.ensure_future(asyncio.create_task(self._join_channel_loop(channel_name)))
 
+	def _get_channel(self, channel_name):
+		if channel_name is None:
+			return None
+		return self._channels.get(channel_name.lower())
+
 	def handle_msg(self, msg):
 		super().handle_msg(msg)
 		if msg.is_cmdcode(ReplyCode.RPL_NAMREPLY):
-			channel = self._channels.get((msg.get_param(2, "")).lower())
+			channel = self._get_channel(msg.get_param(2))
 			if channel is not None:
 				nicknames = msg.get_param(3, "").split(" ")
 				for nickname in nicknames:
 					channel.add_user(nickname)
+		elif msg.is_cmdcode("JOIN") and msg.is_from_user():
+			channel = self._get_channel(msg.get_param(0))
+			if channel is not None:
+				channel.add_user(msg.origin["nickname"])
+		elif msg.is_cmdcode("PART") and msg.is_from_user():
+			channel = self._get_channel(msg.get_param(0))
+			if channel is not None:
+				channel.remove_user(msg.origin["nickname"])
+		elif msg.is_cmdcode("NICK") and msg.is_from_user():
+			for channel in self._channels.values():
+				channel.rename_user(msg.origin["nickname"], msg.get_param(0))

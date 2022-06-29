@@ -50,5 +50,10 @@ class Channel():
 		with contextlib.suppress(KeyError):
 			self._users.remove(nickname)
 
+	def rename_user(self, old_nickname: str, new_nickname: str):
+		if old_nickname in self._users:
+			self._users.remove(old_nickname)
+			self._users.add(new_nickname)
+
 	def __str__(self):
 		return "Channel<%s, %d users: %s>" % (self.name, len(self._users), " ".join(sorted(self.users)))

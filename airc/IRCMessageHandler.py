@@ -50,8 +50,16 @@ class IRCMessage():
 		else:
 			return self.cmdcode == cmdcode
 
-	def is_from_user(self, username):
-		return (self._origin is not None) and (self._origin["nickname"].lower() == username.lower())
+	def is_from_user(self, username = None):
+		"""If username is None, returns True if it's a message from any user
+		(as opposed to a server message)."""
+		if (self._origin is not None) and (self._origin["nickname"] is not None):
+			if username is None:
+				return True
+			else:
+				return self._origin["nickname"].lower() == username.lower()
+		else:
+			return False
 
 	def get_param(self, param_index, default_value = None):
 		if param_index >= len(self._params):
