@@ -21,12 +21,6 @@
 
 import asyncio
 
-class Mock():
-	pass
-	def is_cmdcode(self, cmdcode):
-		print("vergleich mit", cmdcode)
-		return False
-
 class IRCResponse():
 	def __init__(self, finish_conditions: tuple, record_conditions: tuple | None = None):
 		self._future = asyncio.Future()
