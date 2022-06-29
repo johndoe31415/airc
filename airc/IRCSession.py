@@ -23,10 +23,11 @@ import asyncio
 import logging
 import socket
 import ssl
+import collections
 from .IRCServer import IRCServer
 from .IRCIdentityGenerator import IRCIdentityGenerator
 from .IRCConnection import IRCConnection
-from airc.Enums import IRCSessionVariable
+from airc.Enums import IRCSessionVariable, IRCCallbackType
 from airc.Exceptions import OutOfValidNicknamesException, ServerSeveredConnectionException, ServerMessageParseException
 
 _log = logging.getLogger(__spec__.name)
@@ -48,6 +49,7 @@ class IRCSession():
 			IRCSessionVariable.JoinChannelTimeoutSecs:							20,
 		}
 		self._usr_ctx = usr_ctx
+		self._callbacks = collections.defaultdict(list)
 
 	@property
 	def irc_client_class(self):
@@ -70,6 +72,9 @@ class IRCSession():
 	@property
 	def identity_generator(self):
 		return self._identity_generator
+
+	def add_listener(self, callback_type: IRCCallbackType, callback):
+		self._callbacks[callback_type].append(callback)
 
 	def get_var(self, key: IRCSessionVariable):
 		return self._variables[key]

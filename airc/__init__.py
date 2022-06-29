@@ -21,6 +21,7 @@
 
 import airc.Logging
 import airc.client
+import airc.Enums
 from .IRCServer import IRCServer
 from .IRCIdentity import IRCIdentity
 from .IRCIdentityGenerator import ListIRCIdentityGenerator
