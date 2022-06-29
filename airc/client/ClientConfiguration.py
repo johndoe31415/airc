@@ -13,6 +13,7 @@ class ClientConfiguration():
 			IRCTimeout.RejoinChannelTimeSecs:							10,
 		}
 		self._autojoin_channels = set()
+		self._handle_ctcp_version = False
 		self._report_version = None
 
 	def timeout(self, key: IRCTimeout):
@@ -26,12 +27,21 @@ class ClientConfiguration():
 		return self._report_version
 
 	@version.setter
-	def version(self, value):
+	def version(self, value: str):
+		self._handle_ctcp_version = True
 		self._report_version = value
+
+	@property
+	def handle_ctcp_version(self):
+		return self._handle_ctcp_version
+
+	@version.setter
+	def handle_ctcp_version(self, value: bool):
+		self._handle_ctcp_version = value
 
 	@property
 	def autojoin_channels(self):
 		return iter(self._autojoin_channels)
 
-	def add_autojoin_channel(self, channel):
+	def add_autojoin_channel(self, channel: str):
 		self._autojoin_channels.add(channel)

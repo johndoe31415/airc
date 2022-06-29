@@ -56,6 +56,7 @@ class SimpleIRCClient():
 		cbc = CallbackClass()
 		client_configuration = airc.client.ClientConfiguration()
 		client_configuration.add_autojoin_channel("#mytest")
+		client_configuration.version = "none of your business"
 
 		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, use_ssl = self._args.use_tls)
 		irc_servers = [ irc_server ]

@@ -75,6 +75,10 @@ class BasicIRCClient(RawIRCClient):
 	def _handle_ctcp_request(self, nickname, text):
 		# If it's already handled internally, return True. Otherwise return
 		# False and it will be propagated to the application.
+		if (text.lower() == "version") and (self._irc_session.client_configuration.handle_ctcp_version):
+			if self._irc_session.client_configuration.version is not None:
+				self.ctcp_reply(nickname, f"VERSION {self._irc_session.client_configuration.version}")
+			return True
 		return False
 
 	def handle_msg(self, msg):
