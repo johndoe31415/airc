@@ -53,10 +53,13 @@ class BasicIRCClient():
 		self._irc_connection.tx_message(f"NOTICE {nickname} :{msg}")
 
 	def handle_msg(self, msg):
+		if msg.origin is None:
+			return
+
 		if msg.is_cmdcode("ping"):
 			data = msg.params[0]
 			_log.debug(f"Sending PONG reply to PING request ({data}) on {self._irc_connection.irc_server}.")
 			self._irc_connection.tx_message("PONG :%s" % (data))
-		elif msg.is_cmdcode("nick") and msg.is_from_user(self.our_nickname):
+		elif msg.is_cmdcode("nick") and msg.origin.is_from_nickname(self.our_nickname):
 			# Server changed our nickname
 			self.our_nickname = msg.params[0]

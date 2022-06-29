@@ -66,6 +66,10 @@ class LurkingIRCClient(BasicIRCClient):
 
 	def handle_msg(self, msg):
 		super().handle_msg(msg)
+
+		if msg.origin is None:
+			return
+
 		if msg.is_cmdcode(ReplyCode.RPL_NAMREPLY):
 			channel = self._get_channel(msg.get_param(2))
 			if channel is not None:
