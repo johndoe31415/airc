@@ -57,6 +57,8 @@ class SimpleIRCClient():
 		client_configuration = airc.client.ClientConfiguration()
 		client_configuration.add_autojoin_channel("#mytest")
 		client_configuration.version = "none of your business"
+		client_configuration.time_deviation_secs = 1234
+		client_configuration.handle_ctcp_ping = True
 
 		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, use_ssl = self._args.use_tls)
 		irc_servers = [ irc_server ]
@@ -68,10 +70,14 @@ class SimpleIRCClient():
 		session = airc.IRCSession(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen, client_configuration = client_configuration)
 		session.add_listener(airc.Enums.IRCCallbackType.PrivateMessage, cbc.on_private_message)
 		asyncio.ensure_future(session.task())
+
+
 		while True:
 			if session.client is not None:
 				print([ str(chan) for chan in session.client.channels.values() ])
-			await asyncio.sleep(1)
+#				session.client.ctcp_request("hakun4", "VERSION")
+			await asyncio.sleep(10)
+
 
 parser = FriendlyArgumentParser(description = "Simple IRC client.")
 parser.add_argument("-H", "--hostname", metavar = "hostname", default = "irc.irclink.net", help = "Specifies hostname to connect to. Defaults to %(default)s.")

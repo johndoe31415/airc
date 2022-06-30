@@ -20,13 +20,14 @@
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
 import collections
+import datetime
 from airc.Enums import Usermode
 
 class NameTools():
 	_Nickname = collections.namedtuple("Nickname", [ "nickname", "mode" ])
 
 	@classmethod
-	def parse_nickname(cls, nickname):
+	def parse_nickname(cls, nickname: str):
 		if nickname.startswith("@"):
 			nickname = nickname[1:]
 			mode = Usermode.Op
@@ -36,3 +37,8 @@ class NameTools():
 		else:
 			mode = Usermode.Regular
 		return cls._Nickname(nickname = nickname, mode = mode)
+
+class TimeTools():
+	@classmethod
+	def format_ctcp_timestamp(cls, timestamp: datetime.datetime):
+		return timestamp.strftime("%a %b %H:%M:%S %Y")

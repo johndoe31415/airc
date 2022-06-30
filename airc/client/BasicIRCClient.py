@@ -21,12 +21,13 @@
 
 import asyncio
 import logging
+import datetime
 from airc.Channel import Channel
 from airc.IRCResponse import IRCResponse
 from .RawIRCClient import RawIRCClient
 from airc.Enums import IRCTimeout, IRCCallbackType
 from airc.ReplyCode import ReplyCode
-from airc.Tools import NameTools
+from airc.Tools import NameTools, TimeTools
 
 _log = logging.getLogger(__spec__.name)
 
@@ -79,7 +80,24 @@ class BasicIRCClient(RawIRCClient):
 			if self._irc_session.client_configuration.version is not None:
 				self.ctcp_reply(nickname, f"VERSION {self._irc_session.client_configuration.version}")
 			return True
+		elif text.lower().startswith("ping") and (self._irc_session.client_configuration.handle_ctcp_ping):
+			arg = text[5:]
+			if len(arg) == 0:
+				self.ctcp_reply(nickname, "PING")
+			else:
+				self.ctcp_reply(nickname, f"PING {arg}")
+			return True
+		elif (text.lower() == "time") and (self._irc_session.client_configuration.handle_ctcp_time):
+			now = datetime.datetime.utcnow() + datetime.timedelta(0, self._irc_session.client_configuration.time_deviation_secs)
+			time_fmt = TimeTools.format_ctcp_timestamp(now)
+			self.ctcp_reply(nickname, f"TIME {time_fmt}")
+			return True
 		return False
+
+	def _handle_ctcp_reply(self, nickname, text):
+		# If it's already handled internally, return True. Otherwise return
+		# False and it will be propagated to the application.
+		pass
 
 	def handle_msg(self, msg):
 		super().handle_msg(msg)
@@ -119,7 +137,7 @@ class BasicIRCClient(RawIRCClient):
 			text = msg.get_param(1)
 			if (len(text) >= 2) and text.startswith("\x01") and text.endswith("\x01"):
 				text = text[1 : -1]
-				if self._handle_ctcp_request(msg.origin.nickname, text):
+				if not self._handle_ctcp_request(msg.origin.nickname, text):
 					self.fire_callback(IRCCallbackType.CTCPRequest, msg.origin.nickname, text)
 			else:
 				self.fire_callback(IRCCallbackType.PrivateMessage, msg.origin.nickname, text)
@@ -128,7 +146,7 @@ class BasicIRCClient(RawIRCClient):
 			text = msg.get_param(1)
 			if (len(text) >= 2) and text.startswith("\x01") and text.endswith("\x01"):
 				text = text[1 : -1]
-				if self._handle_ctcp_reply(msg.origin.nickname, text):
+				if not self._handle_ctcp_reply(msg.origin.nickname, text):
 					self.fire_callback(IRCCallbackType.CTCPReply, msg.origin.nickname, text)
 			else:
 				self.fire_callback(IRCCallbackType.Notice, msg.origin.nickname, text)
