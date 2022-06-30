@@ -19,6 +19,19 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
+import re
+
 class DCCRequest():
+	_ACTIVE_DCC_REQUEST_REGEX = re.compile(r"DCC\s+SEND\s+(?P<filename>.+)\s+(?P<ip>\d+)\s+(?P<port>\d+)\s+(?P<filesize>\d+)", flags = re.IGNORECASE)
+	_PASSIVE_DCC_REQUEST_REGEX = re.compile(r"DCC\s+SEND\s+(?P<filename>.+)\s+(?P<firewalled_ip>\d+)\s+0\s+(?P<filesize>\d+)\s+(?P<token>\d+)", flags = re.IGNORECASE)
+
 	def __init__(self):
+		pass
+
+	@classmethod
+	def parse(cls, text):
+		result = cls._ACTIVE_DCC_REQUEST_REGEX.fullmatch(text)
+		if result is not None:
+			pass
+
 		pass
