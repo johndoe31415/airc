@@ -24,3 +24,4 @@ class OutOfValidNicknamesException(AsyncIRCException): pass
 class ServerSeveredConnectionException(AsyncIRCException): pass
 class ServerMessageParseException(AsyncIRCException): pass
 class InvalidOriginException(AsyncIRCException): pass
+class DCCRequestParseException(AsyncIRCException): pass

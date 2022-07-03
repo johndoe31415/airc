@@ -20,18 +20,60 @@
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
 import re
+import ipaddress
+from airc.Exceptions import DCCRequestParseException
 
 class DCCRequest():
-	_ACTIVE_DCC_REQUEST_REGEX = re.compile(r"DCC\s+SEND\s+(?P<filename>.+)\s+(?P<ip>\d+)\s+(?P<port>\d+)\s+(?P<filesize>\d+)", flags = re.IGNORECASE)
-	_PASSIVE_DCC_REQUEST_REGEX = re.compile(r"DCC\s+SEND\s+(?P<filename>.+)\s+(?P<firewalled_ip>\d+)\s+0\s+(?P<filesize>\d+)\s+(?P<token>\d+)", flags = re.IGNORECASE)
+	_DCC_REQUEST_REGEX = re.compile(r"DCC\s+SEND\s+(?P<filename>.+?)\s+(?P<ip>\d+)\s+(?P<port>\d+)\s+(?P<filesize>\d+)(\s+(?P<passive_token>\d+))?", flags = re.IGNORECASE)
 
-	def __init__(self):
-		pass
+	def __init__(self, filename, ip, port, filesize, passive_token):
+		self._filename = filename
+		self._ip = ip
+		self._port = port
+		self._filesize = filesize
+		self._passive_token = passive_token
+
+	@property
+	def filename(self):
+		return self._filename
+
+	@property
+	def ip(self):
+		return self._ip
+
+	@property
+	def port(self):
+		return self._port
+
+	@property
+	def filesize(self):
+		return self._filesize
+
+	@property
+	def passive_token(self):
+		return self._passive_token
+
+	@property
+	def is_passive(self):
+		return self.port == 0
 
 	@classmethod
 	def parse(cls, text):
-		result = cls._ACTIVE_DCC_REQUEST_REGEX.fullmatch(text)
-		if result is not None:
-			pass
+		result = cls._DCC_REQUEST_REGEX.fullmatch(text)
+		if result is None:
+			raise DCCRequestParseException(f"Unable to parse DCC SEND request; regex mismatch: {text}")
 
-		pass
+		result = result.groupdict()
+		if result["filename"].startswith("\"") and result["filename"].endswith("\"") and (len(result["filename"]) > 2):
+			result["filename"] = result["filename"][1 : -1]
+
+		if result["passive_token"] is None:
+			passive_token = None
+		else:
+			passive_token = int(result["passive_token"])
+
+		port = int(result["port"])
+		if (port > 65535) or (port < 0):
+			raise DCCRequestParseException(f"Unable to parse DCC SEND request; invalid port: {text}")
+
+		return cls(filename = result["filename"], ip = ipaddress.IPv4Address(int(result["ip"])), port = port, filesize = int(result["filesize"]), passive_token = passive_token)
