@@ -60,7 +60,7 @@ class SimpleIRCClient():
 		client_configuration.time_deviation_secs = 1234
 		client_configuration.handle_ctcp_ping = True
 
-		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, use_ssl = self._args.use_tls)
+		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, password = self._args.password, use_ssl = self._args.use_tls)
 		irc_servers = [ irc_server ]
 		if len(self._args.nickname) == 0:
 			identities = [ airc.IRCIdentity(nickname = "x" + os.urandom(4).hex()) ]
@@ -82,6 +82,7 @@ class SimpleIRCClient():
 parser = FriendlyArgumentParser(description = "Simple IRC client.")
 parser.add_argument("-H", "--hostname", metavar = "hostname", default = "irc.irclink.net", help = "Specifies hostname to connect to. Defaults to %(default)s.")
 parser.add_argument("-p", "--port", metavar = "port", type = int, default = 6667, help = "Specifies port to connect to. Defaults to %(default)d.")
+parser.add_argument("--password", metavar = "password", help = "Specifies the server password. By default unset.")
 parser.add_argument("-s", "--use-tls", action = "store_true", help = "Connect using TLS to the server.")
 parser.add_argument("-n", "--nickname", metavar = "nick", action = "append", default = [ ], help = "Nickname(s) to use. Multiple fallbacks can be specified. By default, a randomized nickname is used.")
 parser.add_argument("-v", "--verbose", action = "count", default = 0, help = "Increases verbosity. Can be specified multiple times to increase.")

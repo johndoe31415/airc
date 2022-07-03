@@ -84,8 +84,7 @@ class IRCConnection():
 
 	async def _register(self):
 		if self._irc_server.password is not None:
-			# TODO TEST ME
-			rsp = await self.tx_message("PASS %s" % (self._irc_server.password))
+			rsp = self.tx_message("PASS :%s" % (self._irc_server.password))
 
 		for irc_identity in self._irc_session.identity_generator:
 			_log.debug(f"Registering at server {self._irc_server} using identity {irc_identity}")
@@ -96,8 +95,8 @@ class IRCConnection():
 			try:
 				hostname = "localhost"
 				servername = "*"
-				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {hostname} {servername} :{irc_identity.realname or irc_identity.nickname}", response = IRCResponse.on_cmdcode(finish_cmdcodes = ("MODE", ReplyCode.ERR_NICKNAMEINUSE, ReplyCode.ERR_ERRONEUSNICKNAME))), timeout = self._irc_session.client_configuration.timeout(IRCTimeout.RegistrationTimeoutSecs))
-				if rsp[0].is_cmdcode("MODE"):
+				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {hostname} {servername} :{irc_identity.realname or irc_identity.nickname}", response = IRCResponse.on_cmdcode(finish_cmdcodes = ("MODE", ReplyCode.ERR_NICKNAMEINUSE, ReplyCode.ERR_ERRONEUSNICKNAME, ReplyCode.RPL_ENDOFMOTD))), timeout = self._irc_session.client_configuration.timeout(IRCTimeout.RegistrationTimeoutSecs))
+				if rsp[0].is_cmdcode("MODE") or rsp[0].is_cmdcode(ReplyCode.RPL_ENDOFMOTD):
 					_log.info(f"Registeration at server {self._irc_server} using identity {irc_identity} completed successfully.")
 					self._registration_complete.set()
 					self._client.our_nickname = rsp[0].params[0]
