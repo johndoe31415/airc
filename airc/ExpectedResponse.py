@@ -21,7 +21,7 @@
 
 import asyncio
 
-class IRCResponse():
+class ExpectedResponse():
 	def __init__(self, finish_conditions: tuple, record_conditions: tuple | None = None):
 		self._future = asyncio.Future()
 		self._finish_conditions = finish_conditions

@@ -23,7 +23,7 @@ import asyncio
 import logging
 import datetime
 from airc.Channel import Channel
-from airc.IRCResponse import IRCResponse
+from airc.ExpectedResponse import ExpectedResponse
 from .RawIRCClient import RawIRCClient
 from airc.Enums import IRCTimeout, IRCCallbackType
 from airc.ReplyCode import ReplyCode
@@ -49,7 +49,7 @@ class BasicIRCClient(RawIRCClient):
 			if not channel.joined:
 				finish_conditions = tuple([lambda msg: msg.has_param(0, channel.name, ignore_case = True) and msg.is_cmdcode("JOIN") ])
 				try:
-					rsp = await asyncio.wait_for(self._irc_connection.tx_message(f"JOIN {channel.name}", response = IRCResponse(finish_conditions = finish_conditions)), timeout = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs))
+					rsp = await asyncio.wait_for(self._irc_connection.tx_message(f"JOIN {channel.name}", expect = ExpectedResponse(finish_conditions = finish_conditions)), timeout = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs))
 					channel.joined = True
 				except asyncio.exceptions.TimeoutError:
 					delay = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs)

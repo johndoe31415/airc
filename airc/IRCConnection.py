@@ -25,7 +25,7 @@ import logging
 from airc.IRCMessageHandler import IRCMessageHandler
 from airc.Exceptions import ServerSeveredConnectionException
 from airc.Enums import IRCTimeout
-from airc.IRCResponse import IRCResponse
+from airc.ExpectedResponse import ExpectedResponse
 from airc.ReplyCode import ReplyCode
 
 _log = logging.getLogger(__spec__.name)
@@ -62,13 +62,13 @@ class IRCConnection():
 		self._pending_responses = [ response_obj for response_obj in self._pending_responses if response_obj.feed(msg) ]
 		self._client.handle_msg(msg)
 
-	def tx_message(self, text: str, response: IRCResponse | None = None):
+	def tx_message(self, text: str, expect: ExpectedResponse | None = None):
 		_log.trace(f"-> {self.irc_server} : {text}")
 		binmsg = self._msghandler.encode(text)
 		self._writer.write(binmsg)
-		if response is not None:
-			self._pending_responses.append(response)
-			return response.future
+		if expect is not None:
+			self._pending_responses.append(expect)
+			return expect.future
 
 	async def _handle_rx(self):
 		while not self._shutdown:
@@ -95,7 +95,7 @@ class IRCConnection():
 			try:
 				hostname = "localhost"
 				servername = "*"
-				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {hostname} {servername} :{irc_identity.realname or irc_identity.nickname}", response = IRCResponse.on_cmdcode(finish_cmdcodes = ("MODE", ReplyCode.ERR_NICKNAMEINUSE, ReplyCode.ERR_ERRONEUSNICKNAME, ReplyCode.RPL_ENDOFMOTD))), timeout = self._irc_session.client_configuration.timeout(IRCTimeout.RegistrationTimeoutSecs))
+				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {hostname} {servername} :{irc_identity.realname or irc_identity.nickname}", expect = ExpectedResponse.on_cmdcode(finish_cmdcodes = ("MODE", ReplyCode.ERR_NICKNAMEINUSE, ReplyCode.ERR_ERRONEUSNICKNAME, ReplyCode.RPL_ENDOFMOTD))), timeout = self._irc_session.client_configuration.timeout(IRCTimeout.RegistrationTimeoutSecs))
 				if rsp[0].is_cmdcode("MODE") or rsp[0].is_cmdcode(ReplyCode.RPL_ENDOFMOTD):
 					_log.info(f"Registeration at server {self._irc_server} using identity {irc_identity} completed successfully.")
 					self._registration_complete.set()

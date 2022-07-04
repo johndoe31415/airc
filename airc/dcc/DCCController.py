@@ -175,7 +175,7 @@ class DCCController():
 				# Resume request
 				request = f"DCC RESUME {dcc_request.filename} {dcc_request.port} {resume_position}"
 #				finish_conditions = [ ]
-#				await asyncio.wait_for(irc_client.ctcp_request(reqest), response = IRCResponse(finish_conditions = (finish_condition, ))), timeout = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs))
+#				await asyncio.wait_for(irc_client.ctcp_request(reqest), response = ExpectedResponse(finish_conditions = (finish_condition, ))), timeout = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs))
 
 		try:
 			await self._download_loop(dcc_request, spoolfile, resume_position, reader, writer)
