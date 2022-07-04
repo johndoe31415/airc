@@ -95,8 +95,8 @@ class IRCConnection():
 			try:
 				hostname = "localhost"
 				servername = "*"
-				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {hostname} {servername} :{irc_identity.realname or irc_identity.nickname}", expect = ExpectedResponse.on_cmdcode(finish_cmdcodes = ("MODE", ReplyCode.ERR_NICKNAMEINUSE, ReplyCode.ERR_ERRONEUSNICKNAME, ReplyCode.RPL_ENDOFMOTD))), timeout = self._irc_network.client_configuration.timeout(IRCTimeout.RegistrationTimeoutSecs))
-				if rsp[0].is_cmdcode("MODE") or rsp[0].is_cmdcode(ReplyCode.RPL_ENDOFMOTD):
+				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {hostname} {servername} :{irc_identity.realname or irc_identity.nickname}", expect = ExpectedResponse.on_cmdcode(finish_cmdcodes = ("MODE", ReplyCode.ERR_NICKNAMEINUSE, ReplyCode.ERR_ERRONEUSNICKNAME, ReplyCode.RPL_ENDOFMOTD, ReplyCode.ERR_NOMOTD))), timeout = self._irc_network.client_configuration.timeout(IRCTimeout.RegistrationTimeoutSecs))
+				if rsp[0].is_cmdcode("MODE") or rsp[0].is_cmdcode(ReplyCode.RPL_ENDOFMOTD) or rsp[0].is_cmdcode(ReplyCode.ERR_NOMOTD):
 					_log.info(f"Registeration at server {self._irc_server} using identity {irc_identity} completed successfully.")
 					self._registration_complete.set()
 					self._client.our_nickname = rsp[0].params[0]
