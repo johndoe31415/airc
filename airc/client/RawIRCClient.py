@@ -32,6 +32,10 @@ class RawIRCClient():
 		self._our_nickname = None
 
 	@property
+	def config(self):
+		return self._irc_session.client_configuration
+
+	@property
 	def our_nickname(self):
 		return self._our_nickname
 

@@ -19,11 +19,9 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
-import airc.Logging
-import airc.client
-import airc.dcc
-import airc.Enums
-from .IRCServer import IRCServer
-from .IRCIdentity import IRCIdentity
-from .IRCIdentityGenerator import ListIRCIdentityGenerator
-from .IRCSession import IRCSession
+import dataclasses
+
+@dataclasses.dataclass
+class DCCDecision():
+	accept: bool = False
+	filename: str

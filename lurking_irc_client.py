@@ -53,12 +53,19 @@ class SimpleIRCClient():
 			async def on_private_message(self, irc_client, nickname, text):
 				irc_client.privmsg(nickname, f"you said '{text}', {nickname}, that's not nice")
 
+		dcc_config = airc.dcc.DCCConfiguration()
+		dcc_config.passive_portrange = (16000, 16050)
+		dcc_config.autoaccept = True
+
+		dcc_ctrlr = airc.dcc.DCCController(dcc_configuration = dcc_config)
+
 		cbc = CallbackClass()
 		client_configuration = airc.client.ClientConfiguration()
 		client_configuration.add_autojoin_channel("#mytest")
 		client_configuration.version = "none of your business"
 		client_configuration.time_deviation_secs = 1234
 		client_configuration.handle_ctcp_ping = True
+		client_configuration.dcc_controller = dcc_ctrlr
 
 		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, password = self._args.password, use_ssl = self._args.use_tls)
 		irc_servers = [ irc_server ]

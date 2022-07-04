@@ -28,6 +28,7 @@ from .RawIRCClient import RawIRCClient
 from airc.Enums import IRCTimeout, IRCCallbackType
 from airc.ReplyCode import ReplyCode
 from airc.Tools import NameTools, TimeTools
+from airc.dcc.DCCRequest import DCCRequest
 
 _log = logging.getLogger(__spec__.name)
 
@@ -48,10 +49,10 @@ class BasicIRCClient(RawIRCClient):
 			if not channel.joined:
 				finish_conditions = tuple([lambda msg: msg.has_param(0, channel.name, ignore_case = True) and msg.is_cmdcode("JOIN") ])
 				try:
-					rsp = await asyncio.wait_for(self._irc_connection.tx_message(f"JOIN {channel.name}", response = IRCResponse(finish_conditions = finish_conditions)), timeout = self._irc_session.client_configuration.timeout(IRCTimeout.JoinChannelTimeoutSecs))
+					rsp = await asyncio.wait_for(self._irc_connection.tx_message(f"JOIN {channel.name}", response = IRCResponse(finish_conditions = finish_conditions)), timeout = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs))
 					channel.joined = True
 				except asyncio.exceptions.TimeoutError:
-					delay = self._irc_session.client_configuration.timeout(IRCTimeout.JoinChannelTimeoutSecs)
+					delay = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs)
 					_log.error(f"Joining of {channel.name} timed out, waiting for {delay} seconds before retrying.")
 					await asyncio.sleep(delay)
 
@@ -59,7 +60,7 @@ class BasicIRCClient(RawIRCClient):
 			await channel.event()
 			if joined_before and (not channel.joined):
 				# We were kicked. Delay and retry
-				delay = self._irc_session.client_configuration.timeout(IRCTimeout.RejoinChannelTimeSecs)
+				delay = self.config.timeout(IRCTimeout.RejoinChannelTimeSecs)
 				_log.info(f"Will rejoin {channel.name} after {delay} seconds.")
 				await asyncio.sleep(delay)
 
@@ -76,22 +77,31 @@ class BasicIRCClient(RawIRCClient):
 	def _handle_ctcp_request(self, nickname, text):
 		# If it's already handled internally, return True. Otherwise return
 		# False and it will be propagated to the application.
-		if (text.lower() == "version") and (self._irc_session.client_configuration.handle_ctcp_version):
-			if self._irc_session.client_configuration.version is not None:
-				self.ctcp_reply(nickname, f"VERSION {self._irc_session.client_configuration.version}")
+		if (text.lower() == "version") and (self.config.handle_ctcp_version):
+			if self.config.version is not None:
+				self.ctcp_reply(nickname, f"VERSION {self.config.version}")
 			return True
-		elif text.lower().startswith("ping") and (self._irc_session.client_configuration.handle_ctcp_ping):
+		elif text.lower().startswith("ping") and (self.config.handle_ctcp_ping):
 			arg = text[5:]
 			if len(arg) == 0:
 				self.ctcp_reply(nickname, "PING")
 			else:
 				self.ctcp_reply(nickname, f"PING {arg}")
 			return True
-		elif (text.lower() == "time") and (self._irc_session.client_configuration.handle_ctcp_time):
-			now = datetime.datetime.utcnow() + datetime.timedelta(0, self._irc_session.client_configuration.time_deviation_secs)
+		elif (text.lower() == "time") and (self.config.handle_ctcp_time):
+			now = datetime.datetime.utcnow() + datetime.timedelta(0, self.config.time_deviation_secs)
 			time_fmt = TimeTools.format_ctcp_timestamp(now)
 			self.ctcp_reply(nickname, f"TIME {time_fmt}")
 			return True
+		elif (text.lower().startswith("dcc")) and (self.config.handle_dcc):
+			request = DCCRequest.parse(text)
+
+			if self.config.dcc_controller is None:
+				_log.error(f"Configured to handle DCC clients, but no DCC controller was registered: Unable to handle {request}")
+				return False
+
+			self.config.dcc_controller.handle_request(self, request)
+
 		return False
 
 	def _handle_ctcp_reply(self, nickname, text):

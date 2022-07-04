@@ -24,7 +24,7 @@ import ipaddress
 from airc.dcc.DCCRequest import DCCRequest
 
 class DCCRequestTests(unittest.TestCase):
-	def test_parse(self):
+	def test_parse_passive(self):
 		# This is an actual DCC send request that HexChat 2.16.0 creates; it
 		# always issues '199' for the firewalled IP address during passive
 		# transfers.
@@ -35,3 +35,13 @@ class DCCRequestTests(unittest.TestCase):
 		self.assertEqual(dccreq.filesize, 1)
 		self.assertEqual(dccreq.passive_token, 170)
 		self.assertTrue(dccreq.is_passive)
+
+	def test_parse_active(self):
+		# This is an actual DCC send request that HexChat 2.16.0 creates
+		dccreq = DCCRequest.parse("""DCC SEND "file with space" 16909060 49439 1""")
+		self.assertEqual(dccreq.filename, "file with space")
+		self.assertEqual(dccreq.ip, ipaddress.IPv4Address("1.2.3.4"))
+		self.assertEqual(dccreq.port, 49439)
+		self.assertEqual(dccreq.filesize, 1)
+		self.assertEqual(dccreq.passive_token, None)
+		self.assertFalse(dccreq.is_passive)

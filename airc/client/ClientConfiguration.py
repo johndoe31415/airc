@@ -1,4 +1,5 @@
 from airc.Enums import IRCTimeout
+from airc.dcc.DCCController import DCCController
 
 class ClientConfiguration():
 	def __init__(self):
@@ -18,6 +19,8 @@ class ClientConfiguration():
 		self._handle_ctcp_time = False
 		self._report_time_deviaton_secs = 0
 		self._handle_ctcp_ping = False
+		self._handle_dcc = False
+		self._dcc_controller = None
 
 	def timeout(self, key: IRCTimeout):
 		return self._timeouts[key]
@@ -73,3 +76,20 @@ class ClientConfiguration():
 	@handle_ctcp_ping.setter
 	def handle_ctcp_ping(self, value: bool):
 		self._handle_ctcp_ping = value
+
+	@property
+	def handle_dcc(self):
+		return self._handle_dcc
+
+	@handle_dcc.setter
+	def handle_dcc(self, value: bool):
+		self._handle_dcc = value
+
+	@property
+	def dcc_controller(self):
+		return self._dcc_controller
+
+	@dcc_controller.setter
+	def dcc_controller(self, value: DCCController):
+		self.handle_dcc = True
+		self._dcc_controller = value

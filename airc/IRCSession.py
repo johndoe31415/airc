@@ -29,6 +29,7 @@ from .IRCIdentityGenerator import IRCIdentityGenerator
 from .IRCConnection import IRCConnection
 from airc.Enums import IRCTimeout, IRCCallbackType
 from airc.Exceptions import OutOfValidNicknamesException, ServerSeveredConnectionException, ServerMessageParseException
+from airc.dcc.DCCController import DCCController
 from airc.client import ClientConfiguration
 
 _log = logging.getLogger(__spec__.name)

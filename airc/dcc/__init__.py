@@ -19,4 +19,6 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
+from .DCCConfiguration import DCCConfiguration
+from .DCCController import DCCController
 from .DCCRequest import DCCRequest
