@@ -71,25 +71,6 @@ class DCCRequest():
 	def is_active(self):
 		return not self.is_passive
 
-	def accept_message(self, resume_offset = 0, public_ip = None, passive_port = None):
-		if self.is_active:
-			# Active transfers
-			if resume_offset == 0:
-				# Can directly connect, no response needed.
-				return None
-			else:
-				return f"DCC RESUME {self.filename} {self.port} {resume_offset}"
-		else:
-			# Passive transfers
-			if (public_ip is None) or (passive_port is None):
-				raise PassiveTransferImpossibleException(f"IP or port unset, unable to accept passive transfer (IP {public_ip}, port {passive_port}).")
-
-			if resume_offset == 0:
-				return f"DCC SEND {self.filename} {int(public_ip)} {passive_port} {self.passive_token}"
-			else:
-				#???
-				pass
-
 	@classmethod
 	def parse(cls, text):
 		result = cls._DCC_REQUEST_REGEX.fullmatch(text)
