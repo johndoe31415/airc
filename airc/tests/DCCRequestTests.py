@@ -29,7 +29,7 @@ class DCCRequestTests(unittest.TestCase):
 		# always issues '199' for the firewalled IP address during passive
 		# transfers.
 		dccreq = DCCRequest.parse("""DCC SEND "file with space" and quot" 199 0 1 170""")
-		self.assertEqual(dccreq.filename, "file with space\" and quot")
+		self.assertEqual(dccreq.filename, "\"file with space\" and quot\"")
 		self.assertEqual(dccreq.ip, ipaddress.IPv4Address("0.0.0.199"))
 		self.assertEqual(dccreq.port, 0)
 		self.assertEqual(dccreq.filesize, 1)
@@ -37,9 +37,12 @@ class DCCRequestTests(unittest.TestCase):
 		self.assertTrue(dccreq.is_passive)
 
 	def test_parse_active(self):
-		# This is an actual DCC send request that HexChat 2.16.0 creates
+		# This is an actual DCC send request that HexChat 2.16.0 creates. Note:
+		# the enclosure in quotation marks that HexChat does is not mandated
+		# and it's also not particularly useful, since quotation marks in the
+		# filename are not escaped. We therefore parse the literal string.
 		dccreq = DCCRequest.parse("""DCC SEND "file with space" 16909060 49439 1""")
-		self.assertEqual(dccreq.filename, "file with space")
+		self.assertEqual(dccreq.filename, "\"file with space\"")
 		self.assertEqual(dccreq.ip, ipaddress.IPv4Address("1.2.3.4"))
 		self.assertEqual(dccreq.port, 49439)
 		self.assertEqual(dccreq.filesize, 1)
