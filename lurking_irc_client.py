@@ -55,8 +55,8 @@ class SimpleIRCClient():
 				irc_client.privmsg(nickname, f"you said '{text}', {nickname}, that's not nice")
 
 		dcc_config = airc.dcc.DCCConfiguration()
-		dcc_config.passive_ip = ipaddress.IPv4Address("192.168.178.34")
-		dcc_config.passive_portrange = (16000, 16050)
+		dcc_config.public_ip = ipaddress.IPv4Address("192.168.178.34")
+		dcc_config.listening_portrange = (16000, 16050)
 		dcc_config.autoaccept = True
 
 		dcc_ctrlr = airc.dcc.DCCController(dcc_configuration = dcc_config)

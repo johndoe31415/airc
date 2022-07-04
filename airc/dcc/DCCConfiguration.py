@@ -28,8 +28,8 @@ class DCCConfiguration():
 		self._autoaccept_download_dir = os.path.expanduser("~/.airc/downloaded/")
 		self._download_spooldir = os.path.expanduser("~/.cache/airc/dcc_download/")
 		self._enable_passive = False
-		self._passive_ip = None
-		self._passive_portrange = None
+		self._public_ip = None
+		self._listening_portrange = None
 		self._discard_tail_at_resume = 128 * 1024
 
 	@property
@@ -73,22 +73,22 @@ class DCCConfiguration():
 		self._enable_passive = value
 
 	@property
-	def passive_ip(self):
-		return self._passive_ip
+	def public_ip(self):
+		return self._public_ip
 
-	@passive_ip.setter
-	def passive_ip(self, value: ipaddress.IPv4Address):
-		self._passive_ip = value
+	@public_ip.setter
+	def public_ip(self, value: ipaddress.IPv4Address):
+		self._public_ip = value
 
 	@property
-	def passive_portrange(self):
-		return self._passive_portrange
+	def listening_portrange(self):
+		return self._listening_portrange
 
-	@passive_portrange.setter
-	def passive_portrange(self, value: tuple[int]):
+	@listening_portrange.setter
+	def listening_portrange(self, value: tuple[int]):
 		assert(len(value) == 2)
 		assert(value[0] <= value[1])
-		self._passive_portrange = value
+		self._listening_portrange = value
 		self.enable_passive = True
 
 	@property

@@ -38,10 +38,10 @@ class DCCController():
 		with contextlib.suppress(FileExistsError):
 			os.makedirs(self.config.download_spooldir_active)
 		self._move_active_downloads_to_stale()
-		if self.config.passive_portrange is None:
+		if self.config.listening_portrange is None:
 			self._passive_ports = [ ]
 		else:
-			self._passive_ports = list(range(self.config.passive_portrange[0], self.config.passive_portrange[1] + 1))
+			self._passive_ports = list(range(self.config.listening_portrange[0], self.config.listening_portrange[1] + 1))
 
 	@property
 	def config(self):
