@@ -89,7 +89,7 @@ class DCCController():
 			finally:
 				self._passive_ports.append(passive_port)
 		else:
-			raise DCCPassivePortsExhaustedException(f"Passive DCC transfer requested in {dcc_request}, but all passive ports exhausted. Cannot transfer.")
+			raise DCCPassivePortsExhaustedException("Passive DCC transfer requested, but all passive ports exhausted. Cannot transfer.")
 		return single_connection_server
 
 	def handle_receive(self, irc_client, nickname, dcc_request):

@@ -27,11 +27,12 @@ import logging
 import asyncio
 import contextlib
 import shutil
+from airc.dcc.DCCDecision import DCCDecision
 from airc.dcc.DCCRequest import DCCRequestParser
-from airc.Exceptions import DCCTransferAbortedException, DCCTransferDataMismatchException, DCCTransferTimeoutException
+from airc.Exceptions import DCCTransferAbortedException, DCCTransferDataMismatchException, DCCTransferTimeoutException, DCCResourcesExhaustedException, DCCPassiveTransferUnderconfiguredException
 from airc.Tools import NumberTools
 from airc.ExpectedResponse import ExpectedResponse
-from airc.Enums import IRCTimeout
+from airc.Enums import IRCTimeout, IRCCallbackType
 
 _log = logging.getLogger(__spec__.name)
 
@@ -67,8 +68,8 @@ class DCCRecvTransfer():
 		filename = self._sanitize_filename(self._dcc_request.filename)
 		if not self._dcc_controller.config.autoaccept:
 			# Let the client make a decision
-			decision = airc.dcc.DCCDecision(filename = self._dcc_controller.config.autoaccept_download_dir + "/" + filename)
-			self.fire_callback(IRCCallbackType.IncomingDCCRequest, self._dcc_request, decision)
+			decision = DCCDecision(filename = self._dcc_controller.config.autoaccept_download_dir + "/" + filename)
+			self._irc_client.fire_callback(IRCCallbackType.IncomingDCCRequest, self._dcc_request, decision)
 			if not decision.accept:
 				# Handler refuses to accept this file.
 				_log.info(f"Incoming DCC request {self._dcc_request} was rejected by handler. Ignoring the request.")

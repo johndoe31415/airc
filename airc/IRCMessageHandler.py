@@ -88,7 +88,7 @@ class IRCMessageHandler():
 					origin = Origin.parse(origin_text)
 				except InvalidOriginException as e:
 					_log.error(f"Could not parse origin string {origin_text} using regular expression: {e}")
-					origin = Origin(hostname = origin_text)
+					origin = Origin(hostname = origin_text, nickname = None, username = None)
 			else:
 				origin = None
 
