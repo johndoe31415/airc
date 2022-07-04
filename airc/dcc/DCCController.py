@@ -20,6 +20,7 @@
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
 import os
+import time
 import logging
 import asyncio
 import shutil
@@ -59,9 +60,12 @@ class DCCController():
 			return
 
 		# Remove spooldir entries less than discard_tail_at_resume bytes in
-		# size (these would be discarded anyways, not resumed)
+		# size (these would be discarded anyways, not resumed) and also those
+		# which are fairly old
+		oldest_timestamp = time.time() - (self.config.discard_spoolfiles_after_days * 86400)
 		for filename in self._listdirs(self.config.download_spooldir_stale, self.config.download_spooldir_active):
-			if os.stat(filename).st_size < self.config.discard_tail_at_resume:
+			statres = os.stat(filename)
+			if (statres.st_size < self.config.discard_tail_at_resume) or (statres.st_mtime < oldest_timestamp):
 				os.unlink(filename)
 
 		for filename in self._listdirs(self.config.download_spooldir_active):

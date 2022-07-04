@@ -32,6 +32,7 @@ class DCCConfiguration():
 		self._public_ip = None
 		self._listening_portrange = None
 		self._discard_tail_at_resume = 128 * 1024
+		self._discard_spoolfiles_after_days = 60
 
 	@property
 	def autoaccept(self):
@@ -107,3 +108,11 @@ class DCCConfiguration():
 	@discard_tail_at_resume.setter
 	def discard_tail_at_resume(self, value: int):
 		self._discard_tail_at_resume = value
+
+	@property
+	def discard_spoolfiles_after_days(self):
+		return self._discard_spoolfiles_after_days
+
+	@discard_spoolfiles_after_days.setter
+	def discard_spoolfiles_after_days(self, value: int):
+		self._discard_spoolfiles_after_days = value
