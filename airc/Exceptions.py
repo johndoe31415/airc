@@ -30,3 +30,6 @@ class DCCRequestParseException(DCCTransferException): pass
 class DCCTransferAbortedException(DCCTransferException): pass
 class DCCTransferTimeoutException(DCCTransferException): pass
 class DCCTransferDataMismatchException(DCCTransferException): pass
+class DCCPassiveTransferUnderconfiguredException(DCCTransferException): pass
+class DCCPassivePortsExhaustedException(DCCTransferException): pass
+class DCCResourcesExhaustedException(DCCTransferException): pass

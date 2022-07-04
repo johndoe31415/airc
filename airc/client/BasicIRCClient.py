@@ -100,7 +100,7 @@ class BasicIRCClient(RawIRCClient):
 
 			dcc_request = DCCRequestParser.parse(text)
 			if dcc_request.type == DCCMessageType.Send:
-				dcc_transfer_handle = self.config.dcc_controller.handle_request(self, nickname, dcc_request)
+				dcc_transfer_handle = self.config.dcc_controller.handle_receive(self, nickname, dcc_request)
 				self.fire_callback(IRCCallbackType.DCCTransferStarted, nickname, dcc_transfer_handle)
 
 

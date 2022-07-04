@@ -21,4 +21,5 @@
 
 from .DCCConfiguration import DCCConfiguration
 from .DCCController import DCCController
-from .DCCRequest import DCCRequest
+from .DCCRequest import DCCRequestParser
+from .DCCRecvTransfer import DCCRecvTransfer

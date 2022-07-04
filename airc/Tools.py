@@ -65,3 +65,15 @@ class AsyncTools():
 			future.set_result((reader, writer))
 		server = await asyncio.start_server(accept_callback, host, port, backlog = 1, reuse_address = True, reuse_port = True)
 		return (server, future)
+
+class NumberTools():
+	@classmethod
+	def round_down(cls, value, boundary):
+		"""Guaranteed to have at least 'boundary' less bytes (unless the result
+		would become zero, then it clips)."""
+		value = value - boundary
+		if value < 0:
+			value = 0
+		value = value // boundary
+		value = value * boundary
+		return value

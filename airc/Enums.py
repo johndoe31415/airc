@@ -35,6 +35,7 @@ class IRCTimeout(enum.IntEnum):
 
 class IRCCallbackType(enum.Enum):
 	PrivateMessage = "privmsg"
+	ChannelMessage = "chanmsg"
 	Notice = "notice"
 	CTCPRequest = "ctcp_request"
 	CTCPReply = "ctcp_reply"
