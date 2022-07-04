@@ -21,6 +21,7 @@
 
 import re
 import ipaddress
+from airc.Enums import DCCMessageType
 from airc.Exceptions import DCCRequestParseException
 
 class DCCRequest():
@@ -33,6 +34,10 @@ class DCCRequest():
 		self._filesize = filesize
 		self._passive_token = passive_token
 		self._turbo = turbo
+
+	@property
+	def type(self):
+		return DCCMessageType.Send
 
 	@property
 	def filename(self):
@@ -66,20 +71,20 @@ class DCCRequest():
 	def is_active(self):
 		return not self.is_passive
 
-	def accept_message(self, resume_position = 0, passive_ip = None, passive_port = None):
+	def accept_message(self, resume_offset = 0, passive_ip = None, passive_port = None):
 		if self.is_active:
 			# Active transfers
-			if resume_position == 0:
+			if resume_offset == 0:
 				# Can directly connect, no response needed.
 				return None
 			else:
-				return f"DCC RESUME {self.filename} {self.port} {resume_position}"
+				return f"DCC RESUME {self.filename} {self.port} {resume_offset}"
 		else:
 			# Passive transfers
 			if (passive_ip is None) or (passive_port is None):
 				raise PassiveTransferImpossibleException(f"IP or port unset, unable to accept passive transfer (IP {passive_ip}, port {passive_port}).")
 
-			if resume_position == 0:
+			if resume_offset == 0:
 				return f"DCC SEND {self.filename} {int(passive_ip)} {passive_port} {self.passive_token}"
 			else:
 				#???
@@ -105,3 +110,54 @@ class DCCRequest():
 
 	def __str__(self):
 		return f"DCCRequest<{self.filename}, {self.filesize} bytes, {'passive' if self.is_passive else 'active'}, peer {self.ip}:{self.port}>"
+
+
+class DCCConfirmation():
+	_DCC_CONFIRM_REGEX = re.compile(r"DCC\s+ACCEPT\s+(?P<filename>.+?)\s+(?P<port>\d+)\s+(?P<resume_offset>\d+)", flags = re.IGNORECASE)
+
+	def __init__(self, filename: str, port: int, resume_offset: int):
+		self._filename = filename
+		self._port = port
+		self._resume_offset = resume_offset
+
+	@property
+	def type(self):
+		return DCCMessageType.Accept
+
+	@property
+	def filename(self):
+		return self._filename
+
+	@property
+	def port(self):
+		return self._port
+
+	@property
+	def resume_offset(self):
+		return self._resume_offset
+
+	@classmethod
+	def parse(cls, text):
+		result = cls._DCC_CONFIRM_REGEX.fullmatch(text)
+		if result is None:
+			raise DCCRequestParseException(f"Unable to parse DCC ACCEPT request; regex mismatch: {text}")
+
+		port = int(result["port"])
+		if (port > 65535) or (port < 0):
+			raise DCCRequestParseException(f"Unable to parse DCC ACCEPT request; invalid port: {text}")
+
+		return cls(filename = result["filename"], port = port, resume_offset = int(result["resume_offset"]))
+
+	def __str__(self):
+		return f"DCCConfirmation<{self.filename}, {self.port}, resuming at {self.resume_offset}>"
+
+class DCCRequestParser():
+	@classmethod
+	def parse(cls, text):
+		for parse_class in [ DCCRequest, DCCConfirmation ]:
+			try:
+				parsed_dcc_msg = parse_class.parse(text)
+				return parsed_dcc_msg
+			except DCCRequestParseException:
+				pass
+		raise DCCRequestParseException(f"Unable to parse as DCC request: {text}")

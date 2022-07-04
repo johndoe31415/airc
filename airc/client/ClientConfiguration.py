@@ -12,6 +12,7 @@ class ClientConfiguration():
 			IRCTimeout.ReconnectTimeAfterTLSErrorSecs:					10,
 			IRCTimeout.JoinChannelTimeoutSecs:							20,
 			IRCTimeout.RejoinChannelTimeSecs:							10,
+			IRCTimeout.DCCAckResumeTimeoutSecs:							20,
 		}
 		self._autojoin_channels = set()
 		self._handle_ctcp_version = False

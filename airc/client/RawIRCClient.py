@@ -57,10 +57,10 @@ class RawIRCClient():
 			asyncio.ensure_future(callback(self, *args))
 
 	def privmsg(self, nickname, text, expect = None):
-		self._irc_connection.tx_message(f"PRIVMSG {nickname} :{text}", expect = expect)
+		return self._irc_connection.tx_message(f"PRIVMSG {nickname} :{text}", expect = expect)
 
 	def notice(self, nickname, text, expect = None):
-		self._irc_connection.tx_message(f"NOTICE {nickname} :{text}", expect = expect)
+		return self._irc_connection.tx_message(f"NOTICE {nickname} :{text}", expect = expect)
 
 	def ctcp_request(self, nickname, text, expect = None):
 		return self.privmsg(nickname, "\x01" + text + "\x01", expect = expect)

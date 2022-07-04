@@ -37,6 +37,16 @@ class ExpectedResponse():
 			record_conditions = None
 		return cls(finish_conditions = finish_conditions, record_conditions = record_conditions)
 
+	@classmethod
+	def on_privmsg_from(cls, nickname: str, ctcp_message: bool = False):
+		conditions = [ ]
+		conditions.append(lambda msg: msg.is_cmdcode("PRIVMSG"))
+		conditions.append(lambda msg: msg.origin.has_nickname(nickname))
+		conditions.append(lambda msg: not msg.get_param(0, "").startswith("#"))
+		if ctcp_message:
+			conditions.append(lambda msg: msg.get_param(1, "").startswith("\x01") and msg.get_param(1, "").endswith("\x01") and len(msg.get_param(1, "")) > 2)
+		return cls(finish_conditions = (lambda msg: all(condition(msg) for condition in conditions), ))
+
 	@property
 	def future(self):
 		return self._future

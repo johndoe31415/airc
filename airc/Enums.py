@@ -30,6 +30,7 @@ class IRCTimeout(enum.IntEnum):
 	ReconnectTimeAfterTLSErrorSecs = 5
 	JoinChannelTimeoutSecs = 6
 	RejoinChannelTimeSecs = 7
+	DCCAckResumeTimeoutSecs = 8
 
 class IRCCallbackType(enum.Enum):
 	PrivateMessage = "privmsg"
@@ -43,3 +44,7 @@ class Usermode(enum.IntEnum):
 	Regular = 0
 	Voice = 1
 	Op = 2
+
+class DCCMessageType(enum.IntEnum):
+	Send = 0
+	Accept = 1

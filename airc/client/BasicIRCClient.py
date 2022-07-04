@@ -25,10 +25,10 @@ import datetime
 from airc.Channel import Channel
 from airc.ExpectedResponse import ExpectedResponse
 from .RawIRCClient import RawIRCClient
-from airc.Enums import IRCTimeout, IRCCallbackType
+from airc.Enums import IRCTimeout, IRCCallbackType, DCCMessageType
 from airc.ReplyCode import ReplyCode
 from airc.Tools import NameTools, TimeTools
-from airc.dcc.DCCRequest import DCCRequest
+from airc.dcc.DCCRequest import DCCRequestParser
 
 _log = logging.getLogger(__spec__.name)
 
@@ -94,14 +94,14 @@ class BasicIRCClient(RawIRCClient):
 			self.ctcp_reply(nickname, f"TIME {time_fmt}")
 			return True
 		elif (text.lower().startswith("dcc")) and (self.config.handle_dcc):
-			request = DCCRequest.parse(text)
-
 			if self.config.dcc_controller is None:
-				_log.error(f"Configured to handle DCC clients, but no DCC controller was registered: Unable to handle {request}")
+				_log.error(f"Configured to handle DCC clients, but no DCC controller was registered: Unable to handle {dcc_request}")
 				return False
 
-			dcc_transfer_handle = self.config.dcc_controller.handle_request(self, request)
-			self.fire_callback(IRCCallbackType.DCCTransferStarted, nickname, dcc_transfer_handle)
+			dcc_request = DCCRequestParser.parse(text)
+			if dcc_request.type == DCCMessageType.Send:
+				dcc_transfer_handle = self.config.dcc_controller.handle_request(self, nickname, dcc_request)
+				self.fire_callback(IRCCallbackType.DCCTransferStarted, nickname, dcc_transfer_handle)
 
 
 		return False
@@ -132,6 +132,9 @@ class BasicIRCClient(RawIRCClient):
 			channel = self._get_channel(msg.get_param(0))
 			if channel is not None:
 				channel.remove_user(msg.origin.nickname)
+		elif msg.is_cmdcode("QUIT") and msg.origin.is_user_msg:
+			for channel in self._channels.values():
+				channel.remove_user(msg.origin.nickname)
 		elif msg.is_cmdcode("NICK") and msg.origin.is_user_msg:
 			for channel in self._channels.values():
 				channel.rename_user(msg.origin.nickname, msg.get_param(0))
@@ -145,14 +148,18 @@ class BasicIRCClient(RawIRCClient):
 				_log.warning(f"We were kicked out of {channel.name} by {msg.origin}: {reason}")
 				channel.joined = False
 		elif msg.is_cmdcode("PRIVMSG") and msg.origin.is_user_msg:
-			# We received a private message
+			# We received a private message or channel message
+			is_privmsg = not msg.get_param(0).startswith("#")
 			text = msg.get_param(1)
-			if (len(text) >= 2) and text.startswith("\x01") and text.endswith("\x01"):
+			if is_privmsg and (len(text) >= 2) and text.startswith("\x01") and text.endswith("\x01"):
 				text = text[1 : -1]
 				if not self._handle_ctcp_request(msg.origin.nickname, text):
 					self.fire_callback(IRCCallbackType.CTCPRequest, msg.origin.nickname, text)
-			else:
+			elif is_privmsg:
 				self.fire_callback(IRCCallbackType.PrivateMessage, msg.origin.nickname, text)
+			else:
+				channel_name = msg.get_param(0)
+				self.fire_callback(IRCCallbackType.ChannelMessage, msg.origin.nickname, channel_name, text)
 		elif msg.is_cmdcode("NOTICE") and msg.origin.is_user_msg:
 			# We received a notice
 			text = msg.get_param(1)

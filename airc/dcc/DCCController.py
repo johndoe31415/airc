@@ -29,6 +29,8 @@ import shutil
 import struct
 from airc.dcc.DCCConfiguration import DCCConfiguration
 from airc.Exceptions import DCCTransferAbortedException
+from airc.ExpectedResponse import ExpectedResponse
+from airc.Enums import IRCTimeout
 
 _log = logging.getLogger(__spec__.name)
 
@@ -168,14 +170,15 @@ class DCCController():
 		resume_position = os.stat(spoolfile).st_size
 
 		if dcc_request.is_active:
-			if resume_position == 0:
-				# Simply connect to target and download the file.
-				(reader, writer) = await asyncio.open_connection(host = str(dcc_request.ip), port = dcc_request.port)
-			else:
-				# Resume request
-				request = f"DCC RESUME {dcc_request.filename} {dcc_request.port} {resume_position}"
-#				finish_conditions = [ ]
-#				await asyncio.wait_for(irc_client.ctcp_request(reqest), response = ExpectedResponse(finish_conditions = (finish_condition, ))), timeout = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs))
+			if resume_position != 0:
+				# Resume request before we connect
+				text = f"DCC RESUME {dcc_request.filename} {dcc_request.port} {resume_position}"
+				response = await asyncio.wait_for(irc_client.ctcp_request(nickname, text, expect = ExpectedResponse.on_privmsg_from(nickname = nickname, ctcp_message = True)), timeout = irc_client.config.timeout(IRCTimeout.DCCAckResumeTimeoutSecs))
+				print(response)
+			(reader, writer) = await asyncio.open_connection(host = str(dcc_request.ip), port = dcc_request.port)
+		else:
+			PAsV
+
 
 		try:
 			await self._download_loop(dcc_request, spoolfile, resume_position, reader, writer)
@@ -188,5 +191,5 @@ class DCCController():
 			TODO
 
 
-	def handle_request(self, irc_client, dcc_request):
-		asyncio.ensure_future(self._handle_request_async(irc_client, dcc_request))
+	def handle_request(self, irc_client, nickname, dcc_request):
+		asyncio.ensure_future(self._handle_request_async(irc_client, nickname, dcc_request))
