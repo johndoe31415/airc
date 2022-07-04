@@ -34,7 +34,7 @@ from airc.client import ClientConfiguration
 
 _log = logging.getLogger(__spec__.name)
 
-class IRCSession():
+class IRCNetwork():
 	def __init__(self, irc_client_class, irc_servers: list[IRCServer], identity_generator: IRCIdentityGenerator, client_configuration: ClientConfiguration | None):
 		self._irc_client_class = irc_client_class
 		self._irc_servers = irc_servers

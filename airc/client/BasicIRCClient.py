@@ -33,8 +33,8 @@ from airc.dcc.DCCRequest import DCCRequest
 _log = logging.getLogger(__spec__.name)
 
 class BasicIRCClient(RawIRCClient):
-	def __init__(self, irc_session, irc_connection):
-		super().__init__(irc_session, irc_connection)
+	def __init__(self, irc_network, irc_connection):
+		super().__init__(irc_network, irc_connection)
 		asyncio.ensure_future(asyncio.create_task(self._autojoin_channel_coroutine()))
 		self._channels = { }
 
@@ -66,7 +66,7 @@ class BasicIRCClient(RawIRCClient):
 
 	async def _autojoin_channel_coroutine(self):
 		await self._irc_connection.registration_complete.wait()
-		for channel_name in self.irc_session.client_configuration.autojoin_channels:
+		for channel_name in self.irc_network.client_configuration.autojoin_channels:
 			asyncio.ensure_future(asyncio.create_task(self._join_channel_loop(channel_name)))
 
 	def _get_channel(self, channel_name):

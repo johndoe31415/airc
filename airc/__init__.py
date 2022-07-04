@@ -26,4 +26,4 @@ import airc.Enums
 from .IRCServer import IRCServer
 from .IRCIdentity import IRCIdentity
 from .IRCIdentityGenerator import ListIRCIdentityGenerator
-from .IRCSession import IRCSession
+from .IRCNetwork import IRCNetwork

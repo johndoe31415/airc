@@ -26,14 +26,14 @@ from airc.Enums import IRCCallbackType
 _log = logging.getLogger(__spec__.name)
 
 class RawIRCClient():
-	def __init__(self, irc_session, irc_connection):
-		self._irc_session = irc_session
+	def __init__(self, irc_network, irc_connection):
+		self._irc_network = irc_network
 		self._irc_connection = irc_connection
 		self._our_nickname = None
 
 	@property
 	def config(self):
-		return self._irc_session.client_configuration
+		return self._irc_network.client_configuration
 
 	@property
 	def our_nickname(self):
@@ -45,15 +45,15 @@ class RawIRCClient():
 		self._our_nickname = value
 
 	@property
-	def irc_session(self):
-		return self._irc_session
+	def irc_network(self):
+		return self._irc_network
 
 	@property
 	def irc_connection(self):
 		return self._irc_connection
 
 	def fire_callback(self, callback_type: IRCCallbackType, *args):
-		for callback in self.irc_session.get_listeners(callback_type):
+		for callback in self.irc_network.get_listeners(callback_type):
 			asyncio.ensure_future(callback(self, *args))
 
 	def privmsg(self, nickname, text, expect = None):

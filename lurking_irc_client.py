@@ -74,15 +74,15 @@ class SimpleIRCClient():
 		else:
 			identities = [ airc.IRCIdentity(nickname = nickname) for nickname in self._args.nickname ]
 		idgen = airc.ListIRCIdentityGenerator(identities)
-		session = airc.IRCSession(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen, client_configuration = client_configuration)
-		session.add_listener(airc.Enums.IRCCallbackType.PrivateMessage, cbc.on_private_message)
-		asyncio.ensure_future(session.task())
+		network = airc.IRCNetwork(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen, client_configuration = client_configuration)
+		network.add_listener(airc.Enums.IRCCallbackType.PrivateMessage, cbc.on_private_message)
+		asyncio.ensure_future(network.task())
 
 
 		while True:
-			if session.client is not None:
-				print([ str(chan) for chan in session.client.channels.values() ])
-#				session.client.ctcp_request("hakun4", "VERSION")
+			if network.client is not None:
+				print([ str(chan) for chan in network.client.channels.values() ])
+#				network.client.ctcp_request("hakun4", "VERSION")
 			await asyncio.sleep(10)
 
 
