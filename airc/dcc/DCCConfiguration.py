@@ -27,6 +27,7 @@ class DCCConfiguration():
 		self._autoaccept = False
 		self._autoaccept_download_dir = os.path.expanduser("~/.airc/downloaded/")
 		self._download_spooldir = os.path.expanduser("~/.cache/airc/dcc_download/")
+		self._cleanup_spooldir_on_startup = True
 		self._enable_passive = False
 		self._public_ip = None
 		self._listening_portrange = None
@@ -63,6 +64,14 @@ class DCCConfiguration():
 	@property
 	def download_spooldir_stale(self):
 		return self.download_spooldir + "/stale"
+
+	@property
+	def cleanup_spooldir_on_startup(self):
+		return self._cleanup_spooldir_on_startup
+
+	@cleanup_spooldir_on_startup.setter
+	def cleanup_spooldir_on_startup(self, value: bool):
+		self._cleanup_spooldir_on_startup = value
 
 	@property
 	def enable_passive(self):
