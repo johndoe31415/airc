@@ -24,4 +24,4 @@ import dataclasses
 @dataclasses.dataclass
 class DCCDecision():
 	accept: bool = False
-	filename: str
+	filename: str = None
