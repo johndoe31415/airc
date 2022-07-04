@@ -94,6 +94,7 @@ class SimpleIRCClient():
 		network.add_all_listeners(cbc)
 		asyncio.ensure_future(network.task())
 
+		await asyncio.sleep(5)
 		queried_users = set()
 		while True:
 			if network.client is not None:
