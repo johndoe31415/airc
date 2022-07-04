@@ -36,6 +36,8 @@ class IRCCallbackType(enum.Enum):
 	Notice = "notice"
 	CTCPRequest = "ctcp_request"
 	CTCPReply = "ctcp_reply"
+	IncomingDCCRequest = "dcc_xfer_request"
+	DCCTransferStarted = "dcc_xfer_started"
 
 class Usermode(enum.IntEnum):
 	Regular = 0

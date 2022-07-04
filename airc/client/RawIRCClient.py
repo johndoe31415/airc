@@ -56,17 +56,17 @@ class RawIRCClient():
 		for callback in self.irc_session.get_listeners(callback_type):
 			asyncio.ensure_future(callback(self, *args))
 
-	def privmsg(self, nickname, text):
-		self._irc_connection.tx_message(f"PRIVMSG {nickname} :{text}")
+	def privmsg(self, nickname, text, response = None):
+		self._irc_connection.tx_message(f"PRIVMSG {nickname} :{text}", response = response)
 
-	def notice(self, nickname, text):
-		self._irc_connection.tx_message(f"NOTICE {nickname} :{text}")
+	def notice(self, nickname, text, response = None):
+		self._irc_connection.tx_message(f"NOTICE {nickname} :{text}", response = response)
 
-	def ctcp_request(self, nickname, text):
-		return self.privmsg(nickname, "\x01" + text + "\x01")
+	def ctcp_request(self, nickname, text, response = None):
+		return self.privmsg(nickname, "\x01" + text + "\x01", response = response)
 
-	def ctcp_reply(self, nickname, text):
-		return self.notice(nickname, "\x01" + text + "\x01")
+	def ctcp_reply(self, nickname, text, response = None):
+		return self.notice(nickname, "\x01" + text + "\x01", response = response)
 
 	def handle_msg(self, msg):
 		if msg.is_cmdcode("ping"):

@@ -100,7 +100,9 @@ class BasicIRCClient(RawIRCClient):
 				_log.error(f"Configured to handle DCC clients, but no DCC controller was registered: Unable to handle {request}")
 				return False
 
-			self.config.dcc_controller.handle_request(self, request)
+			dcc_transfer_handle = self.config.dcc_controller.handle_request(self, request)
+			self.fire_callback(IRCCallbackType.DCCTransferStarted, nickname, dcc_transfer_handle)
+
 
 		return False
 

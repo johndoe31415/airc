@@ -28,6 +28,7 @@ import base64
 import shutil
 import struct
 from airc.dcc.DCCConfiguration import DCCConfiguration
+from airc.Exceptions import DCCTransferAbortedException
 
 _log = logging.getLogger(__spec__.name)
 
@@ -149,7 +150,7 @@ class DCCController():
 				return try_filename
 			i += 1
 
-	async def _handle_request_async(self, irc_client, dcc_request):
+	async def _handle_request_async(self, irc_client, nickname, dcc_request):
 		# Check if we want to accept this file in the first place and, if so,
 		# where to (tentatively) store it.
 		destination = self._async_request_determine_acceptance(dcc_request)
@@ -164,15 +165,20 @@ class DCCController():
 
 		# Check size of spoolfile to determine if we need to resume the
 		# transfer.
-		filesize = os.stat(spoolfile).st_size
+		resume_position = os.stat(spoolfile).st_size
 
 		if dcc_request.is_active:
-			if filesize == 0:
+			if resume_position == 0:
 				# Simply connect to target and download the file.
 				(reader, writer) = await asyncio.open_connection(host = str(dcc_request.ip), port = dcc_request.port)
+			else:
+				# Resume request
+				request = f"DCC RESUME {dcc_request.filename} {dcc_request.port} {resume_position}"
+#				finish_conditions = [ ]
+#				await asyncio.wait_for(irc_client.ctcp_request(reqest), response = IRCResponse(finish_conditions = (finish_condition, ))), timeout = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs))
 
 		try:
-			await self._download_loop(dcc_request, spoolfile, filesize, reader, writer)
+			await self._download_loop(dcc_request, spoolfile, resume_position, reader, writer)
 
 			# Transfer completed, move spoolfile to download dir
 			destination = self._determine_final_filename(destination)
