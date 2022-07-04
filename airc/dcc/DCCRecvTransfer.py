@@ -44,6 +44,14 @@ class DCCRecvTransfer():
 		self._irc_client = irc_client
 		self._nickname = nickname
 		self._dcc_request = dcc_request
+		self._spoolname = None
+
+	@property
+	def spoolname(self):
+		if self._spoolname is None:
+			safename = base64.b64encode(self._dcc_request.filename.encode("utf-8")).decode("ascii")
+			self._spoolname = f"{self._dcc_request.filesize}_{safename}"
+		return self._spoolname
 
 	def _sanitize_filename(self, filename):
 		# Sanitize filename first
@@ -72,17 +80,19 @@ class DCCRecvTransfer():
 			_log.info(f"Incoming DCC request {self._dcc_request} was autoaccepted, storing to {destination}")
 		return destination
 
-	def _async_request_check_stale_spoolfile(self):
-		# Resume the spoolfile that is the largest
-		safename = base64.b64encode(self._dcc_request.filename.encode("utf-8")).decode("ascii")
-		spoolfiles = [ ]
+	def _spooldir_iter(self, path_prefix, must_exist = False):
 		for i in range(100):
-			potential_spoolfile = f"{self._dcc_controller.config.download_spooldir_stale}/{i:02d}_{self._dcc_request.filesize}_{safename}"
-			try:
-				statres = os.stat(potential_spoolfile)
-				spoolfiles.append((statres.st_size, potential_spoolfile))
-			except FileNotFoundError:
-				pass
+			potential_spoolfile = f"{path_prefix}/{i:02d}_{self.spoolname}"
+			exists = os.path.exists(potential_spoolfile)
+			if exists == must_exist:
+				yield potential_spoolfile
+
+	def _check_stale_spoolfile(self):
+		# Resume the spoolfile that is the largest
+		spoolfiles = [ ]
+		for potential_spoolfile in self._spooldir_iter(self._dcc_controller.config.download_spooldir_stale, must_exist = True):
+			statres = os.stat(potential_spoolfile)
+			spoolfiles.append((statres.st_size, potential_spoolfile))
 
 		if len(spoolfiles) == 0:
 			return
@@ -91,23 +101,24 @@ class DCCRecvTransfer():
 		spoolfiles.sort(reverse = True)
 		return spoolfiles[0][1]
 
-	def _async_request_get_active_spoolfile(self):
-		safename = base64.b64encode(self._dcc_request.filename.encode("utf-8")).decode("ascii")
-		for i in range(100):
-			potential_spoolfile = f"{self._dcc_controller.config.download_spooldir_active}/{i:02d}_{self._dcc_request.filesize}_{safename}"
-			if not os.path.exists(potential_spoolfile):
-				return potential_spoolfile
-		return None
+	def _get_unused_active_spoolfile(self):
+		try:
+			return next(self._spooldir_iter(self._dcc_controller.config.download_spooldir_active))
+		except StopIteration:
+			raise DCCResourcesExhaustedException(f"Could not find an appropriate unused active spoolfile for download of {self._dcc_request}.")
+
+	def _get_unused_stale_spoolfile(self):
+		try:
+			return next(self._spooldir_iter(self._dcc_controller.config.download_spooldir_stale))
+		except StopIteration:
+			raise DCCResourcesExhaustedException(f"Could not find an appropriate unused stale spoolfile for storage of partial {self._dcc_request}.")
 
 	def _create_or_reuse_spoolfile(self):
 		# Check if there already exists a spool file (that the downloaded
 		# progress is sent to). If so, move it into the active state and
 		# attempt to resume.
-		stale_spoolfile = self._async_request_check_stale_spoolfile()
-		active_spoolfile = self._async_request_get_active_spoolfile()
-
-		if active_spoolfile is None:
-			raise DCCResourcesExhaustedException(f"Could not find an appropriate spoolfile for download of {self._dcc_request}.")
+		stale_spoolfile = self._check_stale_spoolfile()
+		active_spoolfile = self._get_unused_active_spoolfile()
 
 		if stale_spoolfile is not None:
 			shutil.move(stale_spoolfile, active_spoolfile)
@@ -147,8 +158,6 @@ class DCCRecvTransfer():
 			if not os.path.exists(try_filename):
 				return try_filename
 			i += 1
-
-
 
 	async def handle(self):
 		if self._dcc_request.is_passive and (not self._dcc_controller.config.enable_passive):
@@ -214,10 +223,10 @@ class DCCRecvTransfer():
 
 		try:
 			await self._download_loop(spoolfile, resume_offset, reader, writer)
-
+		except:
+			# Transfer aborted, move spoolfile to stale
+			shutil.move(spoolfile, self._get_unused_stale_spoolfile())
+		else:
 			# Transfer completed, move spoolfile to download dir
 			destination = self._determine_final_filename(destination)
 			shutil.move(spoolfile, destination)
-		except DCCTransferAbortedException:
-			# Transfer aborted, move spoolfile to stale
-			TODO
