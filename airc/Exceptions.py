@@ -28,3 +28,5 @@ class InvalidOriginException(AsyncIRCException): pass
 class DCCTransferException(AsyncIRCException): pass
 class DCCRequestParseException(DCCTransferException): pass
 class DCCTransferAbortedException(DCCTransferException): pass
+class DCCTransferTimeoutException(DCCTransferException): pass
+class DCCTransferDataMismatchException(DCCTransferException): pass

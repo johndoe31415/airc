@@ -20,6 +20,7 @@
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
 import os
+import ipaddress
 
 class DCCConfiguration():
 	def __init__(self):
@@ -27,7 +28,9 @@ class DCCConfiguration():
 		self._autoaccept_download_dir = os.path.expanduser("~/.airc/downloaded/")
 		self._download_spooldir = os.path.expanduser("~/.cache/airc/dcc_download/")
 		self._enable_passive = False
+		self._passive_ip = None
 		self._passive_portrange = None
+		self._discard_tail_at_resume = 128 * 1024
 
 	@property
 	def autoaccept(self):
@@ -70,6 +73,14 @@ class DCCConfiguration():
 		self._enable_passive = value
 
 	@property
+	def passive_ip(self):
+		return self._passive_ip
+
+	@passive_ip.setter
+	def passive_ip(self, value: ipaddress.IPv4Address):
+		self._passive_ip = value
+
+	@property
 	def passive_portrange(self):
 		return self._passive_portrange
 
@@ -79,3 +90,11 @@ class DCCConfiguration():
 		assert(value[0] <= value[1])
 		self._passive_portrange = value
 		self.enable_passive = True
+
+	@property
+	def discard_tail_at_resume(self):
+		return self._discard_tail_at_resume
+
+	@discard_tail_at_resume.setter
+	def discard_tail_at_resume(self, value: int):
+		self._discard_tail_at_resume = value

@@ -28,7 +28,9 @@ import base64
 import shutil
 import struct
 from airc.dcc.DCCConfiguration import DCCConfiguration
-from airc.Exceptions import DCCTransferAbortedException
+from airc.dcc.DCCRequest import DCCRequestParser
+from airc.Tools import AsyncTools
+from airc.Exceptions import DCCTransferAbortedException, DCCTransferDataMismatchException, DCCTransferTimeoutException
 from airc.ExpectedResponse import ExpectedResponse
 from airc.Enums import IRCTimeout
 
@@ -44,6 +46,15 @@ class DCCController():
 			os.makedirs(self.config.download_spooldir_stale)
 		with contextlib.suppress(FileExistsError):
 			os.makedirs(self.config.download_spooldir_active)
+		self._move_active_downloads_to_stale()
+		if self.config.passive_portrange is None:
+			self._passive_ports = [ ]
+		else:
+			self._passive_ports = list(range(self.config.passive_portrange[0], self.config.passive_portrange[1] + 1))
+
+	def _move_active_downloads_to_stale(self):
+		# TODO implement me
+		pass
 
 	@property
 	def config(self):
@@ -125,6 +136,7 @@ class DCCController():
 	async def _download_loop(self, dcc_request, spoolfile, seek_pos, reader, writer):
 		max_chunksize = 256 * 1024
 		with open(spoolfile, "ab") as f:
+			f.truncate(seek_pos)
 			f.seek(seek_pos)
 			while f.tell() < dcc_request.filesize:
 				chunk = await reader.read(max_chunksize)
@@ -152,6 +164,15 @@ class DCCController():
 				return try_filename
 			i += 1
 
+	@staticmethod
+	def _round_down(value, boundary):
+		value = value - boundary
+		if value < 0:
+			value = 0
+		value = value // boundary
+		value = value * boundary
+		return value
+
 	async def _handle_request_async(self, irc_client, nickname, dcc_request):
 		# Check if we want to accept this file in the first place and, if so,
 		# where to (tentatively) store it.
@@ -166,22 +187,70 @@ class DCCController():
 			return
 
 		# Check size of spoolfile to determine if we need to resume the
-		# transfer.
-		resume_position = os.stat(spoolfile).st_size
+		# transfer. Discard at least the last n bytes, then round to the
+		# closest n byte boundary so that garbage caused by broken transfers
+		# hopefully don't affect us.
+		resume_offset = os.stat(spoolfile).st_size
+		if self.config.discard_tail_at_resume > 0:
+			resume_offset = self._round_down(resume_offset, 128 * 1024)
+
+		if resume_offset != 0:
+			# Resume request before we connect
+			text = f"DCC RESUME {dcc_request.filename} {dcc_request.port} {resume_offset}"
+			if dcc_request.is_passive:
+				text += f" {dcc_request.passive_token}"
+			try:
+				response = await asyncio.wait_for(irc_client.ctcp_request(nickname, text, expect = ExpectedResponse.on_privmsg_from(nickname = nickname, ctcp_message = True)), timeout = irc_client.config.timeout(IRCTimeout.DCCAckResumeTimeoutSecs))
+			except asyncio.exceptions.TimeoutError:
+				raise DCCTransferTimeoutException(f"DCC RESUME was never acknowledged by peer {nickname}, refusing to start transfer.")
+			response = DCCRequestParser.parse(response[0].get_param(1)[1 : -1])
+			if (response.filename != dcc_request.filename) or (response.port != dcc_request.port) or (response.resume_offset != resume_offset) or (response.passive_token != dcc_request.passive_token):
+				# TODO: Technically, there's a small chance this can happen
+				# if we get two concurrent resumption messages from the
+				# same peer; it is quite unlikely, however, so we'll keep
+				# this as is for now. Technically, we should then await
+				# another response until we get definitive timeout.
+				raise DCCTransferDataMismatchException(f"DCC request {dcc_request} and resumption confirmation {response} do not fit together, refusing to resume transfer.")
 
 		if dcc_request.is_active:
-			if resume_position != 0:
-				# Resume request before we connect
-				text = f"DCC RESUME {dcc_request.filename} {dcc_request.port} {resume_position}"
-				response = await asyncio.wait_for(irc_client.ctcp_request(nickname, text, expect = ExpectedResponse.on_privmsg_from(nickname = nickname, ctcp_message = True)), timeout = irc_client.config.timeout(IRCTimeout.DCCAckResumeTimeoutSecs))
-				print(response)
+			if resume_offset == 0:
+				_log.info(f"Starting active DCC transfer from {nickname}")
+			else:
+				_log.info(f"Resuming active DCC transfer from {nickname} at offset {resume_offset}")
 			(reader, writer) = await asyncio.open_connection(host = str(dcc_request.ip), port = dcc_request.port)
 		else:
-			PAsV
+			if not self.config.enable_passive:
+				_log.error(f"Passive DCC transfer requested in {dcc_request}, but passive transfers are disabled.")
+				return
 
+			for _ in range(len(self._passive_ports)):
+				try:
+					passive_port = self._passive_ports.pop(0)
+					(server, future) = await AsyncTools.accept_single_connection(host = None, port = passive_port)
+					break
+				finally:
+					self._passive_ports.append(passive_port)
+			else:
+				_log.error(f"Passive DCC transfer requested in {dcc_request}, but all passive ports exhausted. Cannot transfer.")
+				return
+
+			# Let the peer know which port we're listening on
+			irc_client.ctcp_request(nickname, f"DCC SEND {dcc_request.filename} {int(self.config.passive_ip)} {passive_port} {dcc_request.filesize} {dcc_request.passive_token}")
+			try:
+				(reader, writer) = await asyncio.wait_for(future, timeout = irc_client.config.timeout(IRCTimeout.DCCPassiveConnectTimeoutSecs))
+
+				if resume_offset == 0:
+					_log.info(f"Starting passive DCC transfer from {nickname}")
+				else:
+					_log.info(f"Resuming passive DCC transfer from {nickname} at offset {resume_offset}")
+
+			except asyncio.exceptions.TimeoutError:
+				raise DCCTransferTimeoutException(f"DCC passive connection on port {passive_port} was never established by peer, timed out.")
+			finally:
+				server.close()
 
 		try:
-			await self._download_loop(dcc_request, spoolfile, resume_position, reader, writer)
+			await self._download_loop(dcc_request, spoolfile, resume_offset, reader, writer)
 
 			# Transfer completed, move spoolfile to download dir
 			destination = self._determine_final_filename(destination)

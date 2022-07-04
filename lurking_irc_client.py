@@ -25,6 +25,7 @@ import os
 import airc
 import asyncio
 import logging
+import ipaddress
 from FriendlyArgumentParser import FriendlyArgumentParser
 
 class SimpleIRCClient():
@@ -54,6 +55,7 @@ class SimpleIRCClient():
 				irc_client.privmsg(nickname, f"you said '{text}', {nickname}, that's not nice")
 
 		dcc_config = airc.dcc.DCCConfiguration()
+		dcc_config.passive_ip = ipaddress.IPv4Address("192.168.178.34")
 		dcc_config.passive_portrange = (16000, 16050)
 		dcc_config.autoaccept = True
 
@@ -83,7 +85,7 @@ class SimpleIRCClient():
 			if network.client is not None:
 				print([ str(chan) for chan in network.client.channels.values() ])
 #				network.client.ctcp_request("hakun4", "VERSION")
-			await asyncio.sleep(10)
+			await asyncio.sleep(1)
 
 
 parser = FriendlyArgumentParser(description = "Simple IRC client.")

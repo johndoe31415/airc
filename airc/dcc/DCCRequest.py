@@ -27,7 +27,7 @@ from airc.Exceptions import DCCRequestParseException
 class DCCRequest():
 	_DCC_REQUEST_REGEX = re.compile(r"DCC\s+(?P<turbo>T?)SEND\s+(?P<filename>.+?)\s+(?P<ip>\d+)\s+(?P<port>\d+)\s+(?P<filesize>\d+)(\s+(?P<passive_token>\d+))?", flags = re.IGNORECASE)
 
-	def __init__(self, filename, ip, port, filesize, passive_token = None, turbo = None):
+	def __init__(self, filename: str, ip: ipaddress.IPv4Address, port: int, filesize: int, passive_token: int | None = None, turbo: bool = False):
 		self._filename = filename
 		self._ip = ip
 		self._port = port
@@ -113,12 +113,13 @@ class DCCRequest():
 
 
 class DCCConfirmation():
-	_DCC_CONFIRM_REGEX = re.compile(r"DCC\s+ACCEPT\s+(?P<filename>.+?)\s+(?P<port>\d+)\s+(?P<resume_offset>\d+)", flags = re.IGNORECASE)
+	_DCC_CONFIRM_REGEX = re.compile(r"DCC\s+ACCEPT\s+(?P<filename>.+?)\s+(?P<port>\d+)\s+(?P<resume_offset>\d+)(\s+(?P<passive_token>\d+))?", flags = re.IGNORECASE)
 
-	def __init__(self, filename: str, port: int, resume_offset: int):
+	def __init__(self, filename: str, port: int, resume_offset: int, passive_token: int | None = None):
 		self._filename = filename
 		self._port = port
 		self._resume_offset = resume_offset
+		self._passive_token = passive_token
 
 	@property
 	def type(self):
@@ -136,6 +137,10 @@ class DCCConfirmation():
 	def resume_offset(self):
 		return self._resume_offset
 
+	@property
+	def passive_token(self):
+		return self._passive_token
+
 	@classmethod
 	def parse(cls, text):
 		result = cls._DCC_CONFIRM_REGEX.fullmatch(text)
@@ -146,10 +151,13 @@ class DCCConfirmation():
 		if (port > 65535) or (port < 0):
 			raise DCCRequestParseException(f"Unable to parse DCC ACCEPT request; invalid port: {text}")
 
-		return cls(filename = result["filename"], port = port, resume_offset = int(result["resume_offset"]))
+		return cls(filename = result["filename"], port = port, resume_offset = int(result["resume_offset"]), passive_token = None if (result["passive_token"] is None) else int(result["passive_token"]))
 
 	def __str__(self):
-		return f"DCCConfirmation<{self.filename}, {self.port}, resuming at {self.resume_offset}>"
+		if self.passive_token is None:
+			return f"DCCConfirmation<{self.filename}, {self.port}, resuming at {self.resume_offset}>"
+		else:
+			return f"DCCConfirmation<{self.filename}, {self.port}, resuming at {self.resume_offset}, passive token {self.passive_token}>"
 
 class DCCRequestParser():
 	@classmethod

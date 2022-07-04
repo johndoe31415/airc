@@ -21,6 +21,7 @@
 
 import collections
 import datetime
+import asyncio
 from airc.Enums import Usermode
 
 class NameTools():
@@ -42,3 +43,25 @@ class TimeTools():
 	@classmethod
 	def format_ctcp_timestamp(cls, timestamp: datetime.datetime):
 		return timestamp.strftime("%a %b %H:%M:%S %Y")
+
+class AsyncTools():
+	@classmethod
+	async def accept_single_connection_block(cls, host, port, timeout):
+		future = asyncio.Future()
+		def accept_callback(reader, writer):
+			future.set_result((reader, writer))
+		server = await asyncio.start_server(accept_callback, host, port, backlog = 1, reuse_address = True, reuse_port = True)
+		try:
+			(reader, writer) = await asyncio.wait_for(future, timeout = timeout)
+			return (reader, writer)
+		except asyncio.exceptions.TimeoutError:
+			server.close()
+			raise
+
+	@classmethod
+	async def accept_single_connection(cls, host, port):
+		future = asyncio.Future()
+		def accept_callback(reader, writer):
+			future.set_result((reader, writer))
+		server = await asyncio.start_server(accept_callback, host, port, backlog = 1, reuse_address = True, reuse_port = True)
+		return (server, future)
