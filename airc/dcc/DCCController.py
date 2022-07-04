@@ -51,7 +51,7 @@ class DCCController():
 		# TODO implement me
 		pass
 
-	def allocate_passive_port(self):
+	async def allocate_passive_port(self):
 		def _close_callback(server):
 			_log.debug(f"Port reclaimed: {server.port}")
 			self._passive_ports.append(server.port)
@@ -60,6 +60,7 @@ class DCCController():
 			try:
 				passive_port = self._passive_ports.pop(0)
 				single_connection_server = AsyncSingleConnectionServer(host = None, port = passive_port, close_callback = _close_callback)
+				await single_connection_server.start()
 				break
 			finally:
 				self._passive_ports.append(passive_port)

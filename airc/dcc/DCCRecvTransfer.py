@@ -27,8 +27,11 @@ import logging
 import asyncio
 import contextlib
 import shutil
+from airc.dcc.DCCRequest import DCCRequestParser
 from airc.Exceptions import DCCTransferAbortedException, DCCTransferDataMismatchException, DCCTransferTimeoutException
 from airc.Tools import NumberTools
+from airc.ExpectedResponse import ExpectedResponse
+from airc.Enums import IRCTimeout
 
 _log = logging.getLogger(__spec__.name)
 
@@ -174,7 +177,7 @@ class DCCRecvTransfer():
 			if self._dcc_request.is_passive:
 				text += f" {self._dcc_request.passive_token}"
 			try:
-				response = await asyncio.wait_for(irc_client.ctcp_request(self._nickname, text, expect = ExpectedResponse.on_privmsg_from(nickname = self._nickname, ctcp_message = True)), timeout = irc_client.config.timeout(IRCTimeout.DCCAckResumeTimeoutSecs))
+				response = await asyncio.wait_for(self._irc_client.ctcp_request(self._nickname, text, expect = ExpectedResponse.on_privmsg_from(nickname = self._nickname, ctcp_message = True)), timeout = self._irc_client.config.timeout(IRCTimeout.DCCAckResumeTimeoutSecs))
 			except asyncio.exceptions.TimeoutError:
 				raise DCCTransferTimeoutException(f"DCC RESUME was never acknowledged by peer {self._nickname}, refusing to start transfer.")
 
@@ -195,11 +198,11 @@ class DCCRecvTransfer():
 				_log.info(f"Resuming active DCC transfer from {self._nickname} at offset {resume_offset}")
 			(reader, writer) = await asyncio.open_connection(host = str(self._dcc_request.ip), port = self._dcc_request.port)
 		else:
-			async with self._dcc_controller.allocate_passive_port() as server:
+			with await self._dcc_controller.allocate_passive_port() as server:
 				# Let the peer know which port we're listening on
-				irc_client.ctcp_request(self._nickname, f"DCC SEND {self._dcc_request.filename} {int(self._dcc_controller.config.passive_ip)} {server.port} {self._dcc_request.filesize} {self._dcc_request.passive_token}")
+				self._irc_client.ctcp_request(self._nickname, f"DCC SEND {self._dcc_request.filename} {int(self._dcc_controller.config.passive_ip)} {server.port} {self._dcc_request.filesize} {self._dcc_request.passive_token}")
 				try:
-					(reader, writer) = await asyncio.wait_for(server, timeout = irc_client.config.timeout(IRCTimeout.DCCPassiveConnectTimeoutSecs))
+					(reader, writer) = await asyncio.wait_for(server, timeout = self._irc_client.config.timeout(IRCTimeout.DCCPassiveConnectTimeoutSecs))
 
 					if resume_offset == 0:
 						_log.info(f"Starting passive DCC transfer from {self._nickname}")
