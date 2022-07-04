@@ -69,6 +69,14 @@ class IRCNetwork():
 	def add_listener(self, callback_type: IRCCallbackType, callback):
 		self._callbacks[callback_type].append(callback)
 
+	def add_all_listeners(self, callback_object: object):
+		for callback_type in IRCCallbackType:
+			method_name = "on_" + callback_type.value
+			method = getattr(callback_object, method_name, None)
+			if method is not None:
+				_log.debug("Registering callback method %s for callback type %s", method_name, callback_type)
+				self.add_listener(callback_type, method)
+
 	def get_listeners(self, callback_type: IRCCallbackType):
 		return iter(self._callbacks.get(callback_type, [ ]))
 

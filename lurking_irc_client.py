@@ -26,6 +26,9 @@ import airc
 import asyncio
 import logging
 import ipaddress
+import random
+import json
+import collections
 from FriendlyArgumentParser import FriendlyArgumentParser
 
 class SimpleIRCClient():
@@ -49,10 +52,17 @@ class SimpleIRCClient():
 	async def main(self):
 		class CallbackClass():
 			def __init__(self):
-				pass
+				self._replies = collections.Counter()
 
-			async def on_private_message(self, irc_client, nickname, text):
+			@property
+			def replies(self):
+				return self._replies
+
+			async def on_privmsg(self, irc_client, nickname, text):
 				irc_client.privmsg(nickname, f"you said '{text}', {nickname}, that's not nice")
+
+			async def on_ctcp_reply(self, irc_client, nickname, text):
+				self._replies[text] += 1
 
 		dcc_config = airc.dcc.DCCConfiguration()
 		dcc_config.public_ip = ipaddress.IPv4Address("192.168.178.34")
@@ -63,7 +73,10 @@ class SimpleIRCClient():
 
 		cbc = CallbackClass()
 		client_configuration = airc.client.ClientConfiguration()
-		client_configuration.add_autojoin_channel("#mytest")
+		if len(self._args.channel) == 0:
+			client_configuration.add_autojoin_channel("#mytest")
+		else:
+			client_configuration.add_autojoin_channels(self._args.channel)
 		client_configuration.version = "none of your business"
 		client_configuration.time_deviation_secs = 1234
 		client_configuration.handle_ctcp_ping = True
@@ -77,23 +90,37 @@ class SimpleIRCClient():
 			identities = [ airc.IRCIdentity(nickname = nickname) for nickname in self._args.nickname ]
 		idgen = airc.ListIRCIdentityGenerator(identities)
 		network = airc.IRCNetwork(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen, client_configuration = client_configuration)
-		network.add_listener(airc.Enums.IRCCallbackType.PrivateMessage, cbc.on_private_message)
+#		network.add_listener(airc.Enums.IRCCallbackType.PrivateMessage, cbc.on_private_message)
+		network.add_all_listeners(cbc)
 		asyncio.ensure_future(network.task())
 
-
+		queried_users = set()
 		while True:
 			if network.client is not None:
-				print([ str(chan) for chan in network.client.channels.values() ])
-#				network.client.ctcp_request("hakun4", "VERSION")
+				for chan in network.client.channels:
+					new_users = set(chan.users) - queried_users
+					queried_users |= new_users
+					new_users = list(new_users)
+					random.shuffle(new_users)
+					for new_user in new_users:
+						network.client.ctcp_request(new_user, "VERSION")
+						await asyncio.sleep(self._args.delay_between_msgs)
+						with open(self._args.outfile, "w") as f:
+							json.dump(cbc.replies, f)
+						print(cbc.replies)
 			await asyncio.sleep(1)
 
 
-parser = FriendlyArgumentParser(description = "Simple IRC client.")
+parser = FriendlyArgumentParser(description = "Simple IRC client that sends CTCP queries to clients.")
+parser.add_argument("--delay-between-msgs", metavar = "secs", type = int, default = 60, help = "Delay between sending out CTCP messages, in seconds. Defaults to %(default)d.")
+parser.add_argument("--ctcp-message", metavar = "name", default = "VERSION", help = "CTCP message to send. Defaults to %(default)s.")
+parser.add_argument("-c", "--channel", metavar = "channel", default = [ ], action = "append", help = "Channel to lurk in and query users. Can be specified multiple times. Defaults to #mytest if omitted.")
 parser.add_argument("-H", "--hostname", metavar = "hostname", default = "irc.irclink.net", help = "Specifies hostname to connect to. Defaults to %(default)s.")
 parser.add_argument("-p", "--port", metavar = "port", type = int, default = 6667, help = "Specifies port to connect to. Defaults to %(default)d.")
 parser.add_argument("--password", metavar = "password", help = "Specifies the server password. By default unset.")
 parser.add_argument("-s", "--use-tls", action = "store_true", help = "Connect using TLS to the server.")
 parser.add_argument("-n", "--nickname", metavar = "nick", action = "append", default = [ ], help = "Nickname(s) to use. Multiple fallbacks can be specified. By default, a randomized nickname is used.")
+parser.add_argument("-o", "--outfile", metavar = "file", default = "/tmp/output.json", help = "File to store collected results into. Defaults to %(default)s.")
 parser.add_argument("-v", "--verbose", action = "count", default = 0, help = "Increases verbosity. Can be specified multiple times to increase.")
 args = parser.parse_args(sys.argv[1:])
 

@@ -37,6 +37,10 @@ class ClientConfiguration():
 	def add_autojoin_channel(self, channel: str):
 		self._autojoin_channels.add(channel)
 
+	def add_autojoin_channels(self, channels: list[str]):
+		for channel in channels:
+			self.add_autojoin_channel(channel)
+
 	@property
 	def handle_ctcp_version(self):
 		return self._handle_ctcp_version

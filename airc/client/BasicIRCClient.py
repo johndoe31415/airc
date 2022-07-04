@@ -40,7 +40,12 @@ class BasicIRCClient(RawIRCClient):
 
 	@property
 	def channels(self):
-		return self._channels
+		return self._channels.values()
+
+	def get_channel(self, channel_name):
+		if channel_name is None:
+			return None
+		return self._channels.get(channel_name.lower())
 
 	async def _join_channel_loop(self, channel_name):
 		channel = Channel(channel_name)
@@ -68,11 +73,6 @@ class BasicIRCClient(RawIRCClient):
 		await self._irc_connection.registration_complete.wait()
 		for channel_name in self.irc_network.client_configuration.autojoin_channels:
 			asyncio.ensure_future(asyncio.create_task(self._join_channel_loop(channel_name)))
-
-	def _get_channel(self, channel_name):
-		if channel_name is None:
-			return None
-		return self._channels.get(channel_name.lower())
 
 	def _handle_ctcp_request(self, nickname, text):
 		# If it's already handled internally, return True. Otherwise return
@@ -118,18 +118,18 @@ class BasicIRCClient(RawIRCClient):
 			return
 
 		if msg.is_cmdcode(ReplyCode.RPL_NAMREPLY):
-			channel = self._get_channel(msg.get_param(2))
+			channel = self.get_channel(msg.get_param(2))
 			if channel is not None:
 				nicknames = msg.get_param(3, "").split(" ")
 				for nickname in nicknames:
 					nickname = NameTools.parse_nickname(nickname)
 					channel.add_user(nickname.nickname)
 		elif msg.is_cmdcode("JOIN") and msg.origin.is_user_msg:
-			channel = self._get_channel(msg.get_param(0))
+			channel = self.get_channel(msg.get_param(0))
 			if channel is not None:
 				channel.add_user(msg.origin.nickname)
 		elif msg.is_cmdcode("PART") and msg.origin.is_user_msg:
-			channel = self._get_channel(msg.get_param(0))
+			channel = self.get_channel(msg.get_param(0))
 			if channel is not None:
 				channel.remove_user(msg.origin.nickname)
 		elif msg.is_cmdcode("QUIT") and msg.origin.is_user_msg:
@@ -139,7 +139,7 @@ class BasicIRCClient(RawIRCClient):
 			for channel in self._channels.values():
 				channel.rename_user(msg.origin.nickname, msg.get_param(0))
 		elif msg.is_cmdcode("KICK"):
-			channel = self._get_channel(msg.get_param(0))
+			channel = self.get_channel(msg.get_param(0))
 			nickname = msg.get_param(1)
 			reason = msg.get_param(2)
 			if channel is not None:
