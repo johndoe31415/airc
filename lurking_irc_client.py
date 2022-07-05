@@ -93,7 +93,7 @@ class SimpleIRCClient():
 		network = airc.IRCNetwork(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen, client_configuration = client_configuration)
 #		network.add_listener(airc.Enums.IRCCallbackType.PrivateMessage, cbc.on_private_message)
 		network.add_all_listeners(cbc)
-		asyncio.ensure_future(network.task())
+		network.start()
 
 		await network.connection_established()
 

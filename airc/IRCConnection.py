@@ -26,17 +26,20 @@ from airc.Exceptions import ServerSeveredConnectionException
 from airc.Enums import IRCTimeout
 from airc.ExpectedResponse import ExpectedResponse
 from airc.ReplyCode import ReplyCode
+from airc.AsyncBackgroundTasks import AsyncBackgroundTasks
 
 _log = logging.getLogger(__spec__.name)
 
 class IRCConnection():
 	def __init__(self, irc_network, irc_server, reader, writer):
+		self._bg_tasks = AsyncBackgroundTasks()
 		self._irc_network = irc_network
 		self._irc_server = irc_server
 		self._reader = reader
 		self._writer = writer
 		self._shutdown = False
 		self._registration_complete = asyncio.Event()
+		self._finished = asyncio.Event()
 		self._msghandler = IRCMessageHandler()
 		self._client = self._irc_network.irc_client_class(irc_network = self._irc_network, irc_connection = self)
 		self._pending_responses = [ ]
@@ -53,9 +56,14 @@ class IRCConnection():
 	def registration_complete(self):
 		return self._registration_complete
 
+	@property
+	def finished(self):
+		return self._finished
+
 	def _rx_message(self, msg):
 		if msg.is_cmdcode("error"):
 			# Server aborted connection
+			self._shutdown = True
 			_log.error("Server aborted connection with error: %s", msg)
 			raise ServerSeveredConnectionException(msg)
 		self._pending_responses = [ response_obj for response_obj in self._pending_responses if response_obj.feed(msg) ]
@@ -111,6 +119,8 @@ class IRCConnection():
 				# Registration failed. Retry with next identity
 				_log.error("Registration at server %s using identity %s timed out after %d seconds.", self._irc_server, irc_identity, self._irc_network.client_configuration.timeout(IRCTimeout.RegistrationTimeoutSecs))
 
-	async def handle(self):
-		rx_task = asyncio.create_task(self._handle_rx())
-		await asyncio.gather(self._register(), rx_task)
+	def start(self):
+		rx_task = self._bg_tasks.create_task(self._handle_rx(), "rx_task")
+		register_task = self._bg_tasks.create_task(self._register(), "register_task")
+		rx_task.add_done_callback(register_task.cancel)
+		rx_task.add_done_callback(self._finished.set)

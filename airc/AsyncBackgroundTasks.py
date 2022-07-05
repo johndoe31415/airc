@@ -34,5 +34,5 @@ class AsyncBackgroundTasks():
 		assert(name not in self._tasks)
 		task = asyncio.create_task(coroutine)
 		self._tasks[name] = task
-		task.add_done_callback(self._tasks.pop)
+		task.add_done_callback(lambda coro: self._tasks.pop(name))
 		return task

@@ -26,6 +26,7 @@ import ssl
 import collections
 from airc.Enums import IRCTimeout, IRCCallbackType
 from airc.Exceptions import OutOfValidNicknamesException, ServerSeveredConnectionException, ServerMessageParseException
+from airc.AsyncBackgroundTasks import AsyncBackgroundTasks
 from airc.client import ClientConfiguration
 from .IRCServer import IRCServer
 from .IRCIdentityGenerator import IRCIdentityGenerator
@@ -35,6 +36,7 @@ _log = logging.getLogger(__spec__.name)
 
 class IRCNetwork():
 	def __init__(self, irc_client_class, irc_servers: list[IRCServer], identity_generator: IRCIdentityGenerator, client_configuration: ClientConfiguration | None):
+		self._bg_tasks = AsyncBackgroundTasks()
 		self._irc_client_class = irc_client_class
 		self._irc_servers = irc_servers
 		self._identity_generator = identity_generator
@@ -92,7 +94,8 @@ class IRCNetwork():
 			writer = None
 			(reader, writer) = await asyncio.open_connection(host = irc_server.hostname, port = irc_server.port, ssl = irc_server.ssl_ctx)
 			self._connection = IRCConnection(self, irc_server, reader, writer)
-			await self._connection.handle()
+			self._connection.start()
+			await self._connection.finished.wait()
 		finally:
 			if writer is not None:
 				writer.close()
@@ -121,6 +124,5 @@ class IRCNetwork():
 					_log.warning("Delaying reconnect to %s by %d seconds because we encountered a TLS error: %s", irc_server, delay, e)
 				await asyncio.sleep(delay)
 
-	def task(self):
-		task = asyncio.create_task(self._connection_loop())
-		return task
+	def start(self):
+		self._bg_tasks.create_task(self._connection_loop(), "connection_loop")
