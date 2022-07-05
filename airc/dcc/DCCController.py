@@ -73,11 +73,11 @@ class DCCController():
 			if not os.path.exists(migrated_filename):
 				shutil.move(filename, migrated_filename)
 			else:
-				_log.warning(f"Wanted to move active spoolfile {filename} to stale directory as {migrated_filename}, but the latter already exist. Refusing to overwrite/migrate.")
+				_log.warning("Wanted to move active spoolfile %s to stale directory as %s, but the latter already exist. Refusing to overwrite/migrate.", filename, migrated_filename)
 
 	async def allocate_passive_port(self):
 		def _close_callback(server):
-			_log.debug(f"Port reclaimed: {server.port}")
+			_log.debug("Port reclaimed: %d", server.port)
 			self._passive_ports.append(server.port)
 
 		for _ in range(len(self._passive_ports)):

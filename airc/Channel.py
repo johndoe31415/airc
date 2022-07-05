@@ -66,4 +66,5 @@ class Channel(EventObject):
 		elif len(self._users) == 0:
 			return f"Channel<{self.name}, no users>"
 		else:
-			return "Channel<%s, %d users: %s>" % (self.name, len(self._users), " ".join(sorted(self.users)))
+			user_str = " ".join(sorted(self.users))
+			return f"Channel<{self.name}, {len(self._users)} users: {user_str}>"

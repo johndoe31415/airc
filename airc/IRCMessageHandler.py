@@ -66,10 +66,9 @@ class IRCMessage():
 
 	def __str__(self):
 		if self.origin is not None:
-			return "IRCMessage<%s from %s>: %s" % (self.cmdcode, self.origin, self.params)
+			return f"IRCMessage<{self.cmdcode} from {self.origin}>: {self.params}"
 		else:
-			return "IRCMessage<%s>: %s" % (self.cmdcode, self.params)
-
+			return f"IRCMessage<{self.cmdcode}>: {self.params}"
 
 class IRCMessageHandler():
 	def __init__(self, codec: str = "utf-8"):
@@ -87,7 +86,7 @@ class IRCMessageHandler():
 				try:
 					origin = Origin.parse(origin_text)
 				except InvalidOriginException as e:
-					_log.error(f"Could not parse origin string {origin_text} using regular expression: {e}")
+					_log.error("Could not parse origin string %s using regular expression: %s", origin_text, e)
 					origin = Origin(hostname = origin_text, nickname = None, username = None)
 			else:
 				origin = None

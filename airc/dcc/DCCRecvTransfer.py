@@ -63,7 +63,7 @@ class DCCRecvTransfer():
 		return sanitized_filename
 
 	def _determine_acceptance(self):
-		_log.info(f"Handling incoming DCC transfer request {self._dcc_request}")
+		_log.info("Handling incoming DCC transfer request %s", self._dcc_request)
 		# Someone wants to send us a file. First decide if we want it.
 		filename = self._sanitize_filename(self._dcc_request.filename)
 		if not self._dcc_controller.config.autoaccept:
@@ -72,13 +72,13 @@ class DCCRecvTransfer():
 			self._irc_client.fire_callback(IRCCallbackType.IncomingDCCRequest, self._dcc_request, decision)
 			if not decision.accept:
 				# Handler refuses to accept this file.
-				_log.info(f"Incoming DCC request {self._dcc_request} was rejected by handler. Ignoring the request.")
+				_log.info("Incoming DCC request %s was rejected by handler. Ignoring the request.", self._dcc_request)
 				return None
 			destination = decision.filename
-			_log.info(f"Incoming DCC request {self._dcc_request} was accepted by handler, storing to {destination}")
+			_log.info("Incoming DCC request %s was accepted by handler, storing to %s", self._dcc_request, destination)
 		else:
 			destination = self._dcc_controller.config.autoaccept_download_dir + "/" + filename
-			_log.info(f"Incoming DCC request {self._dcc_request} was autoaccepted, storing to {destination}")
+			_log.info("Incoming DCC request %s was autoaccepted, storing to %s", self._dcc_request, destination)
 		return destination
 
 	def _spooldir_iter(self, path_prefix, must_exist = False):
@@ -96,7 +96,7 @@ class DCCRecvTransfer():
 			spoolfiles.append((statres.st_size, potential_spoolfile))
 
 		if len(spoolfiles) == 0:
-			return
+			return None
 
 		# Return the largest of the spoolfiles, which has the most promise
 		spoolfiles.sort(reverse = True)
@@ -125,7 +125,7 @@ class DCCRecvTransfer():
 			shutil.move(stale_spoolfile, active_spoolfile)
 		else:
 			# Create an empty file
-			with open(active_spoolfile, "wb") as f:
+			with open(active_spoolfile, "wb"):
 				pass
 		return active_spoolfile
 
@@ -137,13 +137,13 @@ class DCCRecvTransfer():
 			while f.tell() < self._dcc_request.filesize:
 				chunk = await reader.read(max_chunksize)
 				if len(chunk) == 0:
-					raise DCCTransferAbortedException(f"Peer closed connection of DCC transfer {self._dcc_request} after {f.tell()} bytes.")
+					raise DCCTransferAbortedException("Peer closed connection of DCC transfer {self._dcc_request} after {f.tell()} bytes.")
 				f.write(chunk)
 
 				if not self._dcc_request.turbo:
 					ack_msg = self._ACK_MSG.pack(f.tell() & 0xffffffff)
 					writer.write(ack_msg)
-		_log.info(f"DCC transfer finished successfully: {self._dcc_request}")
+		_log.info("DCC transfer finished successfully: %s", self._dcc_request)
 
 	def _determine_final_filename(self, filename):
 		with contextlib.suppress(FileExistsError):
@@ -188,8 +188,8 @@ class DCCRecvTransfer():
 				text += f" {self._dcc_request.passive_token}"
 			try:
 				response = await asyncio.wait_for(self._irc_client.ctcp_request(self._nickname, text, expect = ExpectedResponse.on_privmsg_from(nickname = self._nickname, ctcp_message = True)), timeout = self._irc_client.config.timeout(IRCTimeout.DCCAckResumeTimeoutSecs))
-			except asyncio.exceptions.TimeoutError:
-				raise DCCTransferTimeoutException(f"DCC RESUME was never acknowledged by peer {self._nickname}, refusing to start transfer.")
+			except asyncio.exceptions.TimeoutError as e:
+				raise DCCTransferTimeoutException(f"DCC RESUME was never acknowledged by peer {self._nickname}, refusing to start transfer.") from e
 
 			ctcp_text = response[0].get_param(1)[1 : -1]
 			response = DCCRequestParser.parse(ctcp_text)
@@ -203,9 +203,9 @@ class DCCRecvTransfer():
 
 		if self._dcc_request.is_active:
 			if resume_offset == 0:
-				_log.info(f"Starting active DCC transfer from {self._nickname}")
+				_log.info("Starting active DCC transfer from %s", self._nickname)
 			else:
-				_log.info(f"Resuming active DCC transfer from {self._nickname} at offset {resume_offset}")
+				_log.info("Resuming active DCC transfer from %s at offset %d", self._nickname, resume_offset)
 			(reader, writer) = await asyncio.open_connection(host = str(self._dcc_request.ip), port = self._dcc_request.port)
 		else:
 			with await self._dcc_controller.allocate_passive_port() as server:
@@ -215,18 +215,19 @@ class DCCRecvTransfer():
 					(reader, writer) = await asyncio.wait_for(server, timeout = self._irc_client.config.timeout(IRCTimeout.DCCPassiveConnectTimeoutSecs))
 
 					if resume_offset == 0:
-						_log.info(f"Starting passive DCC transfer from {self._nickname}")
+						_log.info("Starting passive DCC transfer from %s", self._nickname)
 					else:
-						_log.info(f"Resuming passive DCC transfer from {self._nickname} at offset {resume_offset}")
+						_log.info("Resuming passive DCC transfer from %s at offset %d", self._nickname, resume_offset)
 
-				except asyncio.exceptions.TimeoutError:
-					raise DCCTransferTimeoutException(f"DCC passive connection on port {server.port} was never established by peer, timed out.")
+				except asyncio.exceptions.TimeoutError as e:
+					raise DCCTransferTimeoutException(f"DCC passive connection on port {server.port} was never established by peer, timed out.") from e
 
 		try:
 			await self._download_loop(spoolfile, resume_offset, reader, writer)
 		except:
 			# Transfer aborted, move spoolfile to stale
 			shutil.move(spoolfile, self._get_unused_stale_spoolfile())
+			raise
 		else:
 			# Transfer completed, move spoolfile to download dir
 			destination = self._determine_final_filename(destination)

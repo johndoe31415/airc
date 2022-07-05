@@ -47,7 +47,7 @@ class RawIRCClient():
 
 	@our_nickname.setter
 	def our_nickname(self, value):
-		_log.info(f"Our nickname with {self._irc_connection.irc_server} is now {value}")
+		_log.info("Our nickname with %s is now %s", self._irc_connection.irc_server, value)
 		self._our_nickname = value
 
 	@property
@@ -84,8 +84,8 @@ class RawIRCClient():
 	def handle_msg(self, msg):
 		if msg.is_cmdcode("ping"):
 			data = msg.params[0]
-			_log.debug(f"Sending PONG reply to PING request ({data}) on {self._irc_connection.irc_server}.")
-			self._irc_connection.tx_message("PONG :%s" % (data))
+			_log.trace("Sending PONG reply to PING request (%s) on %s.", data, self._irc_connection.irc_server)
+			self._irc_connection.tx_message(f"PONG :{data}")
 		elif msg.is_cmdcode("nick") and msg.origin.has_nickname(self.our_nickname):
 			# Server changed our nickname
 			self.our_nickname = msg.params[0]

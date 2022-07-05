@@ -24,12 +24,12 @@ import logging
 import datetime
 from airc.Channel import Channel
 from airc.ExpectedResponse import ExpectedResponse
-from .RawIRCClient import RawIRCClient
 from airc.Enums import IRCTimeout, IRCCallbackType, DCCMessageType
 from airc.ReplyCode import ReplyCode
 from airc.Tools import NameTools, TimeTools
 from airc.dcc.DCCRequest import DCCRequestParser
 from airc.AsyncBackgroundTasks import AsyncBackgroundTasks
+from .RawIRCClient import RawIRCClient
 
 _log = logging.getLogger(__spec__.name)
 
@@ -56,11 +56,11 @@ class BasicIRCClient(RawIRCClient):
 			if not channel.joined:
 				finish_conditions = tuple([lambda msg: msg.has_param(0, channel.name, ignore_case = True) and msg.is_cmdcode("JOIN") ])
 				try:
-					rsp = await asyncio.wait_for(self._irc_connection.tx_message(f"JOIN {channel.name}", expect = ExpectedResponse(finish_conditions = finish_conditions)), timeout = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs))
+					await asyncio.wait_for(self._irc_connection.tx_message(f"JOIN {channel.name}", expect = ExpectedResponse(finish_conditions = finish_conditions)), timeout = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs))
 					channel.joined = True
 				except asyncio.exceptions.TimeoutError:
 					delay = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs)
-					_log.error(f"Joining of {channel.name} timed out, waiting for {delay} seconds before retrying.")
+					_log.error("Joining of %s timed out, waiting for %d seconds before retrying.", channel.name, delay)
 					await asyncio.sleep(delay)
 
 			joined_before = channel.joined
@@ -68,7 +68,7 @@ class BasicIRCClient(RawIRCClient):
 			if joined_before and (not channel.joined):
 				# We were kicked. Delay and retry
 				delay = self.config.timeout(IRCTimeout.RejoinChannelTimeSecs)
-				_log.info(f"Will rejoin {channel.name} after {delay} seconds.")
+				_log.info("Will rejoin %s after %d seconds.", channel.name, delay)
 				await asyncio.sleep(delay)
 
 	def add_autojoin_channel(self, channel_name):
@@ -100,7 +100,7 @@ class BasicIRCClient(RawIRCClient):
 			return True
 		elif (text.lower().startswith("dcc")) and (self.config.handle_dcc):
 			if self.config.dcc_controller is None:
-				_log.error(f"Configured to handle DCC clients, but no DCC controller was registered: Unable to handle {dcc_request}")
+				_log.error("Configured to handle DCC clients, but no DCC controller was registered: Unable to handle %s", dcc_request)
 				return False
 
 			dcc_request = DCCRequestParser.parse(text)
@@ -150,7 +150,7 @@ class BasicIRCClient(RawIRCClient):
 			if channel is not None:
 				channel.remove_user(nickname)
 			if nickname == self.our_nickname:
-				_log.warning(f"We were kicked out of {channel.name} by {msg.origin}: {reason}")
+				_log.warning("We were kicked out of %s by %s: %s", channel.name, msg.origin, reason)
 				channel.joined = False
 		elif msg.is_cmdcode("PRIVMSG") and msg.origin.is_user_msg:
 			# We received a private message or channel message

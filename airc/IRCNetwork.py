@@ -24,13 +24,12 @@ import logging
 import socket
 import ssl
 import collections
+from airc.Enums import IRCTimeout, IRCCallbackType
+from airc.Exceptions import OutOfValidNicknamesException, ServerSeveredConnectionException, ServerMessageParseException
+from airc.client import ClientConfiguration
 from .IRCServer import IRCServer
 from .IRCIdentityGenerator import IRCIdentityGenerator
 from .IRCConnection import IRCConnection
-from airc.Enums import IRCTimeout, IRCCallbackType
-from airc.Exceptions import OutOfValidNicknamesException, ServerSeveredConnectionException, ServerMessageParseException
-from airc.dcc.DCCController import DCCController
-from airc.client import ClientConfiguration
 
 _log = logging.getLogger(__spec__.name)
 
@@ -88,7 +87,7 @@ class IRCNetwork():
 		return iter(self._callbacks.get(callback_type, [ ]))
 
 	async def _connect(self, irc_server):
-		_log.info(f"Connecting to {irc_server}")
+		_log.info("Connecting to %s", irc_server)
 		try:
 			writer = None
 			(reader, writer) = await asyncio.open_connection(host = irc_server.hostname, port = irc_server.port, ssl = irc_server.ssl_ctx)
@@ -107,19 +106,19 @@ class IRCNetwork():
 					await self._connect(irc_server)
 				except OutOfValidNicknamesException as e:
 					delay = self.client_configuration.timeout(IRCTimeout.ReconnectTimeAfterNicknameExhaustionSecs)
-					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because no nickname was acceptable: {e}")
+					_log.warning("Delaying reconnect to %s by %d seconds because no nickname was acceptable: %s", irc_server, delay, e)
 				except (socket.gaierror, ConnectionRefusedError, ConnectionResetError) as e:
 					delay = self.client_configuration.timeout(IRCTimeout.ReconnectTimeAfterConnectionErrorSecs)
-					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because of socket error: {e}")
+					_log.warning("Delaying reconnect to %s by %d seconds because of socket error: %s", irc_server, delay, e)
 				except ServerSeveredConnectionException as e:
 					delay = self.client_configuration.timeout(IRCTimeout.ReconnectTimeAfterSeveredConnectionSecs)
-					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because server severed the connection: {e}")
+					_log.warning("Delaying reconnect to %s by %d seconds because server severed the connection: %s", irc_server, delay, e)
 				except ServerMessageParseException as e:
 					delay = self.client_configuration.timeout(IRCTimeout.ReconnectTimeAfterServerParseExceptionSecs)
-					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because server sent a message we could not parse: {e}")
+					_log.warning("Delaying reconnect to %s by %d seconds because server sent a message we could not parse: %s", irc_server, delay, e)
 				except ssl.SSLError as e:
 					delay = self.client_configuration.timeout(IRCTimeout.ReconnectTimeAfterTLSErrorSecs)
-					_log.warning(f"Delaying reconnect to {irc_server} by {delay} seconds because we encountered a TLS error: {e}")
+					_log.warning("Delaying reconnect to %s by %d seconds because we encountered a TLS error: %s", irc_server, delay, e)
 				await asyncio.sleep(delay)
 
 	def task(self):

@@ -62,4 +62,5 @@ class IRCServer():
 			strs.append("SSL")
 		if self.password is not None:
 			strs.append("PASSWD")
-		return "IRCServer<%s>" % (" ".join(strs))
+		strs = " ".join(strs)
+		return f"IRCServer<{strs}>"

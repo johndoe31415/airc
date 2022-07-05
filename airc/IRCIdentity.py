@@ -60,8 +60,8 @@ class IRCIdentity():
 	def __str__(self):
 		data = [ self.nickname ]
 		if self.version is not None:
-			data.append("IRC client = \"%s\"" % (self.version))
+			data.append(f"IRC client = \"{self.version}\"")
 		if self.timezone_hrs is not None:
-			data.append("TZ %+d hrs" % (self.timezone_hrs))
+			data.append(f"TZ {self.timezone_hrs:+d} hrs")
 		data = ", ".join(data)
-		return "%s<%s>" % (self.__class__.__name__, data)
+		return f"{self.__class__.__name__}<{data}>"
