@@ -37,7 +37,7 @@ class BasicIRCClient(RawIRCClient):
 	def __init__(self, irc_network, irc_connection):
 		super().__init__(irc_network, irc_connection)
 		self._bg_tasks = AsyncBackgroundTasks()
-		self._bg_tasks.create_task(self._initial_autojoin_channel_coroutine())
+		self._bg_tasks.create_task(self._autojoin_channel_coroutine())
 		self._channels = { }
 
 	@property
@@ -71,13 +71,18 @@ class BasicIRCClient(RawIRCClient):
 				_log.info("Will rejoin %s after %d seconds.", channel.name, delay)
 				await asyncio.sleep(delay)
 
-	def add_autojoin_channel(self, channel_name):
-		self._bg_tasks.create_task(self._join_channel_loop(channel_name))
+	def _add_autojoin_channel(self, channel_name):
+		taskname = f"autojoin-{channel_name}"
+		if not self._bg_tasks.have_task(taskname):
+			self._bg_tasks.create_task(self._join_channel_loop(channel_name), taskname)
 
-	async def _initial_autojoin_channel_coroutine(self):
+	async def _autojoin_channel_coroutine(self):
 		await self._irc_connection.registration_complete.wait()
-		for channel_name in self.irc_network.client_configuration.autojoin_channels:
-			self.add_autojoin_channel(channel_name)
+		while True:
+			for channel_name in self.irc_network.client_configuration.autojoin_channels:
+				self._add_autojoin_channel(channel_name)
+			self.config.autojoin_channels_changed.clear()
+			await self.config.autojoin_channels_changed.wait()
 
 	def _handle_ctcp_request(self, nickname, text):
 		# If it's already handled internally, return True. Otherwise return

@@ -39,7 +39,6 @@ class IRCConnection():
 		self._writer = writer
 		self._shutdown = False
 		self._registration_complete = asyncio.Event()
-		self._finished = asyncio.Event()
 		self._msghandler = IRCMessageHandler()
 		self._client = self._irc_network.irc_client_class(irc_network = self._irc_network, irc_connection = self)
 		self._pending_responses = [ ]
@@ -55,10 +54,6 @@ class IRCConnection():
 	@property
 	def registration_complete(self):
 		return self._registration_complete
-
-	@property
-	def finished(self):
-		return self._finished
 
 	def _rx_message(self, msg):
 		if msg.is_cmdcode("error"):
@@ -123,4 +118,4 @@ class IRCConnection():
 		rx_task = self._bg_tasks.create_task(self._handle_rx(), "rx_task")
 		register_task = self._bg_tasks.create_task(self._register(), "register_task")
 		rx_task.add_done_callback(register_task.cancel)
-		rx_task.add_done_callback(lambda coro: self._finished.set())
+		return rx_task

@@ -94,8 +94,7 @@ class IRCNetwork():
 			writer = None
 			(reader, writer) = await asyncio.open_connection(host = irc_server.hostname, port = irc_server.port, ssl = irc_server.ssl_ctx)
 			self._connection = IRCConnection(self, irc_server, reader, writer)
-			self._connection.start()
-			await self._connection.finished.wait()
+			await self._connection.start()
 		finally:
 			if writer is not None:
 				writer.close()

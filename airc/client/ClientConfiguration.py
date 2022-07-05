@@ -1,3 +1,4 @@
+import asyncio
 from airc.Enums import IRCTimeout
 from airc.dcc.DCCController import DCCController
 
@@ -16,6 +17,7 @@ class ClientConfiguration():
 			IRCTimeout.DCCPassiveConnectTimeoutSecs:					20,
 		}
 		self._autojoin_channels = set()
+		self._autojoin_channels_changed = asyncio.Event()
 		self._handle_ctcp_version = False
 		self._report_version = None
 		self._handle_ctcp_time = False
@@ -36,10 +38,15 @@ class ClientConfiguration():
 
 	def add_autojoin_channel(self, channel: str):
 		self._autojoin_channels.add(channel)
+		self._autojoin_channels_changed.set()
 
 	def add_autojoin_channels(self, channels: list[str]):
 		for channel in channels:
 			self.add_autojoin_channel(channel)
+
+	@property
+	def autojoin_channels_changed(self):
+		return self._autojoin_channels_changed
 
 	@property
 	def handle_ctcp_version(self):

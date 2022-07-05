@@ -91,34 +91,42 @@ class SimpleIRCClient():
 			identities = [ airc.IRCIdentity(nickname = nickname, username = "bob") for nickname in self._args.nickname ]
 		idgen = airc.ListIRCIdentityGenerator(identities)
 		network = airc.IRCNetwork(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen, client_configuration = client_configuration)
-#		network.add_listener(airc.Enums.IRCCallbackType.PrivateMessage, cbc.on_private_message)
 		network.add_all_listeners(cbc)
 		network.start()
 
 		await network.connection_established()
 
-		channels = await network.client.list_channels()
-		channels.sort(key = lambda channel: channel.user_count, reverse = True)
-		for channel in channels[:5]:
-			# Join the most popular channels -- not robust (doesn't survive reconnect)
-			network.client.add_autojoin_channel(channel.name)
+		async def list_channels_join_most_popular():
+			channels = await network.client.list_channels()
+			channels.sort(key = lambda channel: channel.user_count, reverse = True)
+			for channel in channels[:5]:
+				client_configuration.add_autojoin_channel(channel.name)
 
-		queried_users = set()
-		while True:
-			if network.client is not None:
-				for chan in list(network.client.channels):
-					new_users = set(chan.users) - queried_users
-					queried_users |= new_users
-					new_users = list(new_users)
-					random.shuffle(new_users)
-					for new_user in new_users:
-						network.client.ctcp_request(new_user, self._args.ctcp_message)
-						await asyncio.sleep(self._args.delay_between_msgs)
-						with open(self._args.outfile, "w") as f:
-							json.dump(cbc.replies, f)
-						print(cbc.replies)
-			await asyncio.sleep(1)
+		async def query_users():
+			queried_users = set()
+			while True:
+				if network.client is not None:
+					for chan in list(network.client.channels):
+						new_users = set(chan.users) - queried_users
+						queried_users |= new_users
+						new_users = list(new_users)
+						random.shuffle(new_users)
+						for new_user in new_users:
+							network.client.ctcp_request(new_user, self._args.ctcp_message)
+							await asyncio.sleep(self._args.delay_between_msgs)
+							with open(self._args.outfile, "w") as f:
+								json.dump(cbc.replies, f)
+							print(cbc.replies)
+				await asyncio.sleep(1)
 
+		async def show_state():
+			while True:
+				if network.client is not None:
+					print(network.client.channels)
+				await asyncio.sleep(1)
+
+
+		await asyncio.gather(list_channels_join_most_popular(), query_users(), show_state())
 
 parser = FriendlyArgumentParser(description = "Simple IRC client that sends CTCP queries to clients.")
 parser.add_argument("--delay-between-msgs", metavar = "secs", type = int, default = 60, help = "Delay between sending out CTCP messages, in seconds. Defaults to %(default)d.")

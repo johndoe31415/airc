@@ -36,3 +36,6 @@ class AsyncBackgroundTasks():
 		self._tasks[name] = task
 		task.add_done_callback(lambda coro: self._tasks.pop(name))
 		return task
+
+	def have_task(self, name):
+		return name in self._tasks

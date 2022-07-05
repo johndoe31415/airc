@@ -60,7 +60,7 @@ class Channel(EventObject):
 			self._users.remove(old_nickname)
 			self._users.add(new_nickname)
 
-	def __str__(self):
+	def __repr__(self):
 		if not self.joined:
 			return f"Channel<{self.name}, unjoined>"
 		elif len(self._users) == 0:
