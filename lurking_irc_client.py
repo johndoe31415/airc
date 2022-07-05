@@ -106,7 +106,7 @@ class SimpleIRCClient():
 		queried_users = set()
 		while True:
 			if network.client is not None:
-				for chan in network.client.channels:
+				for chan in list(network.client.channels):
 					new_users = set(chan.users) - queried_users
 					queried_users |= new_users
 					new_users = list(new_users)
