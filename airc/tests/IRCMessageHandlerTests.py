@@ -47,3 +47,8 @@ class IRCMessageHandlerTests(unittest.TestCase):
 		self.assertFalse(msg.origin.is_user_msg)
 		self.assertTrue(msg.origin.is_server_msg)
 		self.assertEqual(msg.params, [ "neo", "ACCEPT=30", "AWAYLEN=200", "BOT=B", "CALLERID=g", "CASEMAPPING=ascii", "CHANLIMIT=#:20", "CHANMODES=IXZbew,k,BEFJLWdfjl,ACDKMNOPQRSTUcimnprstuz", "CHANNELLEN=64", "CHANTYPES=#", "ELIST=CMNTU", "ESILENCE=CcdiNnPpTtx", "EXCEPTS=e", "are supported by this server" ])
+
+	def test_special_chars(self):
+		text = b':MustyHay.eu.ix.Undernet.org 322 x0f495180 #aaaaaaaa 5 :\x02\x030,4 #aaaaaaaa \x02\x030,12 \x8fxxxxxxxxxxxxxxxxxxxxxxxx \x02\x030,4 #aaaaaaaa\r\n'
+		msg = self._imh.parse(text)
+		self.assertTrue(msg.is_cmdcode(ReplyCode.RPL_LIST))

@@ -59,7 +59,8 @@ class SimpleIRCClient():
 				return self._replies
 
 			async def on_privmsg(self, irc_client, nickname, text):
-				irc_client.privmsg(nickname, f"you said '{text}', {nickname}, that's not nice")
+				#irc_client.privmsg(nickname, f"you said '{text}', {nickname}, that's not nice")
+				pass
 
 			async def on_ctcp_reply(self, irc_client, nickname, text):
 				self._replies[text] += 1
@@ -96,12 +97,11 @@ class SimpleIRCClient():
 
 		await network.connection_established()
 
-		await network.client.list_channels()
-
-		while True:
-			await asyncio.sleep(1)
-
-
+		channels = await network.client.list_channels()
+		channels.sort(key = lambda channel: channel.user_count, reverse = True)
+		for channel in channels[:5]:
+			# Join the most popular channels -- not robust (doesn't survive reconnect)
+			network.client.add_autojoin_channel(channel.name)
 
 		queried_users = set()
 		while True:
@@ -112,7 +112,7 @@ class SimpleIRCClient():
 					new_users = list(new_users)
 					random.shuffle(new_users)
 					for new_user in new_users:
-						network.client.ctcp_request(new_user, "VERSION")
+						network.client.ctcp_request(new_user, self._args.ctcp_message)
 						await asyncio.sleep(self._args.delay_between_msgs)
 						with open(self._args.outfile, "w") as f:
 							json.dump(cbc.replies, f)

@@ -80,7 +80,7 @@ class IRCMessageHandler():
 
 	def parse(self, text):
 		try:
-			msg = text.decode(self._codec).rstrip("\r\n")
+			msg = text.decode(self._codec, errors = "replace").rstrip("\r\n")
 			if msg.startswith(":"):
 				# Have origin
 				(origin_text, msg) = msg.split(" ", maxsplit = 1)

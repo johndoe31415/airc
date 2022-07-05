@@ -21,6 +21,7 @@
 
 import asyncio
 import logging
+import collections
 from airc.ReplyCode import ReplyCode
 from airc.Enums import IRCCallbackType
 from airc.ExpectedResponse import ExpectedResponse
@@ -28,6 +29,8 @@ from airc.ExpectedResponse import ExpectedResponse
 _log = logging.getLogger(__spec__.name)
 
 class RawIRCClient():
+	ServerChannel = collections.namedtuple("ServerChannel", [ "name", "user_count", "topic" ])
+
 	def __init__(self, irc_network, irc_connection):
 		self._irc_network = irc_network
 		self._irc_connection = irc_connection
@@ -75,7 +78,7 @@ class RawIRCClient():
 		if (not cached_result) or (self.__server_channel_list is None):
 			expect = ExpectedResponse.on_cmdcode(finish_cmdcodes = (ReplyCode.RPL_LISTEND, ), record_cmdcodes = (ReplyCode.RPL_LIST, ))
 			result = await self._irc_connection.tx_message("LIST", expect = expect)
-			print(result)
+			self.__server_channel_list = [ self.ServerChannel(name = msg.get_param(1), user_count = int(msg.get_param(2, "0")), topic = msg.get_param(3)) for msg in result ]
 		return self.__server_channel_list
 
 	def handle_msg(self, msg):
