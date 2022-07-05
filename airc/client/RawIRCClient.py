@@ -25,6 +25,7 @@ import collections
 from airc.ReplyCode import ReplyCode
 from airc.Enums import IRCCallbackType
 from airc.ExpectedResponse import ExpectedResponse
+from airc.AsyncBackgroundTasks import AsyncBackgroundTasks
 
 _log = logging.getLogger(__spec__.name)
 
@@ -32,6 +33,7 @@ class RawIRCClient():
 	ServerChannel = collections.namedtuple("ServerChannel", [ "name", "user_count", "topic" ])
 
 	def __init__(self, irc_network, irc_connection):
+		self._bg_tasks = AsyncBackgroundTasks()
 		self._irc_network = irc_network
 		self._irc_connection = irc_connection
 		self._our_nickname = None
@@ -60,7 +62,7 @@ class RawIRCClient():
 
 	def fire_callback(self, callback_type: IRCCallbackType, *args):
 		for callback in self.irc_network.get_listeners(callback_type):
-			asyncio.ensure_future(callback(self, *args))
+			self._bg_tasks.create_task(callback(self, *args))
 
 	def privmsg(self, nickname, text, expect = None):
 		return self._irc_connection.tx_message(f"PRIVMSG {nickname} :{text}", expect = expect)

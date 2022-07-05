@@ -29,11 +29,13 @@ from airc.dcc.DCCConfiguration import DCCConfiguration
 from airc.dcc.DCCRecvTransfer import DCCRecvTransfer
 from airc.Exceptions import DCCPassivePortsExhaustedException
 from airc.AsyncSingleConnectionServer import AsyncSingleConnectionServer
+from airc.AsyncBackgroundTasks import AsyncBackgroundTasks
 
 _log = logging.getLogger(__spec__.name)
 
 class DCCController():
 	def __init__(self, dcc_configuration: DCCConfiguration):
+		self._bg_tasks = AsyncBackgroundTasks()
 		self._config = dcc_configuration
 		with contextlib.suppress(FileExistsError):
 			os.makedirs(self.config.download_spooldir_stale)
@@ -94,5 +96,5 @@ class DCCController():
 
 	def handle_receive(self, irc_client, nickname, dcc_request):
 		dcc_transfer = DCCRecvTransfer(self, irc_client, nickname, dcc_request)
-		asyncio.ensure_future(dcc_transfer.handle())
+		self._bg_tasks.create_task(dcc_transfer.handle())
 		return dcc_transfer

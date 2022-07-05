@@ -123,4 +123,4 @@ class IRCConnection():
 		rx_task = self._bg_tasks.create_task(self._handle_rx(), "rx_task")
 		register_task = self._bg_tasks.create_task(self._register(), "register_task")
 		rx_task.add_done_callback(register_task.cancel)
-		rx_task.add_done_callback(self._finished.set)
+		rx_task.add_done_callback(lambda coro: self._finished.set())
