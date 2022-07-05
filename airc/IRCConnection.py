@@ -57,18 +57,20 @@ class IRCConnection():
 	def _rx_message(self, msg):
 		if msg.is_cmdcode("error"):
 			# Server aborted connection
-			_log.error(f"Server aborted connection with error: {msg}")
+			_log.error("Server aborted connection with error: %s", msg)
 			raise ServerSeveredConnectionException(msg)
 		self._pending_responses = [ response_obj for response_obj in self._pending_responses if response_obj.feed(msg) ]
 		self._client.handle_msg(msg)
 
 	def tx_message(self, text: str, expect: ExpectedResponse | None = None):
-		_log.trace(f"-> {self.irc_server} : {text}")
+		_log.trace("-> %s : %s", self.irc_server, text)
 		binmsg = self._msghandler.encode(text)
 		self._writer.write(binmsg)
 		if expect is not None:
 			self._pending_responses.append(expect)
 			return expect.future
+		else:
+			return None
 
 	async def _handle_rx(self):
 		while not self._shutdown:
@@ -84,10 +86,10 @@ class IRCConnection():
 
 	async def _register(self):
 		if self._irc_server.password is not None:
-			rsp = self.tx_message("PASS :%s" % (self._irc_server.password))
+			rsp = self.tx_message(f"PASS :{self._irc_server.password}")
 
 		for irc_identity in self._irc_network.identity_generator:
-			_log.debug(f"Registering at server {self._irc_server} using identity {irc_identity}")
+			_log.debug("Registering at server %s using identity %s", self._irc_server, irc_identity)
 
 			# Attempt to register under this username
 			self.tx_message(f"NICK {irc_identity.nickname}")
@@ -97,18 +99,18 @@ class IRCConnection():
 				servername = "*"
 				rsp = await asyncio.wait_for(self.tx_message(f"USER {irc_identity.username or irc_identity.nickname} {hostname} {servername} :{irc_identity.realname or irc_identity.nickname}", expect = ExpectedResponse.on_cmdcode(finish_cmdcodes = ("MODE", ReplyCode.ERR_NICKNAMEINUSE, ReplyCode.ERR_ERRONEUSNICKNAME, ReplyCode.RPL_ENDOFMOTD, ReplyCode.ERR_NOMOTD))), timeout = self._irc_network.client_configuration.timeout(IRCTimeout.RegistrationTimeoutSecs))
 				if rsp[0].is_cmdcode("MODE") or rsp[0].is_cmdcode(ReplyCode.RPL_ENDOFMOTD) or rsp[0].is_cmdcode(ReplyCode.ERR_NOMOTD):
-					_log.info(f"Registeration at server {self._irc_server} using identity {irc_identity} completed successfully.")
+					_log.info(f"Registeration at server %s using identity %s completed successfully.", self._irc_server, irc_identity)
 					self._registration_complete.set()
 					self._client.our_nickname = rsp[0].params[0]
 					break
 				elif rsp[0].is_cmdcode(ReplyCode.ERR_NICKNAMEINUSE):
-					_log.warning(f"Registration at server {self._irc_server} using identity {irc_identity} did not let us use nickname (already in use).")
+					_log.warning("Registration at server %s using identity %s did not let us use nickname (already in use).", self._irc_server, irc_identity)
 				elif rsp[0].is_cmdcode(ReplyCode.ERR_ERRONEUSNICKNAME):
-					_log.warning(f"Registration at server {self._irc_server} using identity {irc_identity} did not let us use nickname (erroneous nickname).")
+					_log.warning("Registration at server %s using identity %s did not let us use nickname (erroneous nickname).", self._irc_server, irc_identity)
 				continue
 			except asyncio.exceptions.TimeoutError:
 				# Registration failed. Retry with next identity
-				_log.error(f"Registration at server {self._irc_server} using identity {irc_identity} timed out after {self._irc_network.client_configuration.timeout(IRCTimeout.RegistrationTimeoutSecs)} seconds.")
+				_log.error("Registration at server %s using identity %s timed out after %d seconds.", self._irc_server, irc_identity, self._irc_network.client_configuration.timeout(IRCTimeout.RegistrationTimeoutSecs))
 				pass
 
 	async def handle(self):
