@@ -21,7 +21,9 @@
 
 import asyncio
 import logging
+from airc.ReplyCode import ReplyCode
 from airc.Enums import IRCCallbackType
+from airc.ExpectedResponse import ExpectedResponse
 
 _log = logging.getLogger(__spec__.name)
 
@@ -30,6 +32,7 @@ class RawIRCClient():
 		self._irc_network = irc_network
 		self._irc_connection = irc_connection
 		self._our_nickname = None
+		self.__server_channel_list = None
 
 	@property
 	def config(self):
@@ -67,6 +70,13 @@ class RawIRCClient():
 
 	def ctcp_reply(self, nickname, text, expect = None):
 		return self.notice(nickname, "\x01" + text + "\x01", expect = expect)
+
+	async def list_channels(self, cached_result: bool = True):
+		if (not cached_result) or (self.__server_channel_list is None):
+			expect = ExpectedResponse.on_cmdcode(finish_cmdcodes = (ReplyCode.RPL_LISTEND, ), record_cmdcodes = (ReplyCode.RPL_LIST, ))
+			result = await self._irc_connection.tx_message("LIST", expect = expect)
+			print(result)
+		return self.__server_channel_list
 
 	def handle_msg(self, msg):
 		if msg.is_cmdcode("ping"):

@@ -66,6 +66,13 @@ class IRCNetwork():
 	def identity_generator(self):
 		return self._identity_generator
 
+	async def connection_established(self):
+		while True:
+			if self._connection is not None:
+				await self._connection.registration_complete.wait()
+				return
+			await asyncio.sleep(1)
+
 	def add_listener(self, callback_type: IRCCallbackType, callback):
 		self._callbacks[callback_type].append(callback)
 

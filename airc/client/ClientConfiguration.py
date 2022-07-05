@@ -4,7 +4,7 @@ from airc.dcc.DCCController import DCCController
 class ClientConfiguration():
 	def __init__(self):
 		self._timeouts = {
-			IRCTimeout.RegistrationTimeoutSecs:							10,
+			IRCTimeout.RegistrationTimeoutSecs:							25,
 			IRCTimeout.ReconnectTimeAfterNicknameExhaustionSecs:		60,
 			IRCTimeout.ReconnectTimeAfterConnectionErrorSecs:			5,
 			IRCTimeout.ReconnectTimeAfterSeveredConnectionSecs:			15,

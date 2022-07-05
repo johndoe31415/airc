@@ -85,16 +85,24 @@ class SimpleIRCClient():
 		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, password = self._args.password, use_ssl = self._args.use_tls)
 		irc_servers = [ irc_server ]
 		if len(self._args.nickname) == 0:
-			identities = [ airc.IRCIdentity(nickname = "x" + os.urandom(4).hex()) ]
+			identities = [ airc.IRCIdentity(nickname = "x" + os.urandom(4).hex(), username = "bob") ]
 		else:
-			identities = [ airc.IRCIdentity(nickname = nickname) for nickname in self._args.nickname ]
+			identities = [ airc.IRCIdentity(nickname = nickname, username = "bob") for nickname in self._args.nickname ]
 		idgen = airc.ListIRCIdentityGenerator(identities)
 		network = airc.IRCNetwork(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen, client_configuration = client_configuration)
 #		network.add_listener(airc.Enums.IRCCallbackType.PrivateMessage, cbc.on_private_message)
 		network.add_all_listeners(cbc)
 		asyncio.ensure_future(network.task())
 
-		await asyncio.sleep(5)
+		await network.connection_established()
+
+		await network.client.list_channels()
+
+		while True:
+			await asyncio.sleep(1)
+
+
+
 		queried_users = set()
 		while True:
 			if network.client is not None:
