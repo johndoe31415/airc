@@ -23,9 +23,16 @@ import asyncio
 
 class AsyncBackgroundTasks():
 	def __init__(self):
-		self._tasks = set()
+		self._tasks = { }
+		self._ctr = 0
 
-	def create_task(self, coroutine):
+	def create_task(self, coroutine, name = None):
+		if name is None:
+			name = f"anonymous-{self._ctr}"
+			self._ctr += 1
+
+		assert(name not in self._tasks)
 		task = asyncio.create_task(coroutine)
-		self._tasks.add(task)
-		task.add_done_callback(self._tasks.discard)
+		self._tasks[name] = task
+		task.add_done_callback(self._tasks.pop)
+		return task
