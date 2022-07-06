@@ -95,6 +95,6 @@ class DCCController():
 		return single_connection_server
 
 	def handle_receive(self, irc_client, nickname, dcc_request):
-		dcc_transfer = DCCRecvTransfer(self, irc_client, nickname, dcc_request)
+		dcc_transfer = DCCRecvTransfer(self, irc_client, nickname, dcc_request, throttle_bytes_per_sec = self.config.default_rx_throttle_bytes_per_sec)
 		self._bg_tasks.create_task(dcc_transfer.handle())
 		return dcc_transfer

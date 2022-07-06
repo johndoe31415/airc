@@ -69,6 +69,7 @@ class SimpleIRCClient():
 		dcc_config.public_ip = ipaddress.IPv4Address("192.168.178.34")
 		dcc_config.listening_portrange = (16000, 16050)
 		dcc_config.autoaccept = True
+		dcc_config.default_rx_throttle_bytes_per_sec = 1000 * 1024
 
 		dcc_ctrlr = airc.dcc.DCCController(dcc_configuration = dcc_config)
 

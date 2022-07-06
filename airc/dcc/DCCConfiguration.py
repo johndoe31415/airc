@@ -33,6 +33,7 @@ class DCCConfiguration():
 		self._listening_portrange = None
 		self._discard_tail_at_resume = 128 * 1024
 		self._discard_spoolfiles_after_days = 60
+		self._default_rx_throttle_bytes_per_sec = None
 
 	@property
 	def autoaccept(self):
@@ -116,3 +117,11 @@ class DCCConfiguration():
 	@discard_spoolfiles_after_days.setter
 	def discard_spoolfiles_after_days(self, value: int):
 		self._discard_spoolfiles_after_days = value
+
+	@property
+	def default_rx_throttle_bytes_per_sec(self):
+		return self._default_rx_throttle_bytes_per_sec
+
+	@default_rx_throttle_bytes_per_sec.setter
+	def default_rx_throttle_bytes_per_sec(self, value: float | None):
+		self._default_rx_throttle_bytes_per_sec = value

@@ -27,25 +27,56 @@ import logging
 import asyncio
 import contextlib
 import shutil
+import time
 from airc.dcc.DCCDecision import DCCDecision
 from airc.dcc.DCCRequest import DCCRequestParser
 from airc.Exceptions import DCCTransferAbortedException, DCCTransferDataMismatchException, DCCTransferTimeoutException, DCCResourcesExhaustedException, DCCPassiveTransferUnderconfiguredException
 from airc.Tools import NumberTools
 from airc.ExpectedResponse import ExpectedResponse
 from airc.Enums import IRCTimeout, IRCCallbackType
+from airc.FilesizeFormatter import FilesizeFormatter
 
 _log = logging.getLogger(__spec__.name)
 
 class DCCRecvTransfer():
 	_FILENAME_SAFECHARS = re.compile(r"[^A-Za-z0-9._-]")
 	_ACK_MSG = struct.Struct("> L")
+	_FilesizeFormatter = FilesizeFormatter()
 
-	def __init__(self, dcc_controller, irc_client, nickname, dcc_request):
+	def __init__(self, dcc_controller, irc_client, nickname: str, dcc_request, throttle_bytes_per_sec: float | None = None):
 		self._dcc_controller = dcc_controller
 		self._irc_client = irc_client
 		self._nickname = nickname
 		self._dcc_request = dcc_request
 		self._spoolname = None
+		self._throttle_bytes_per_sec = throttle_bytes_per_sec
+		self._transfer_started = None
+		self._bytes_transferred = 0
+
+	def average_transfer_speed(self):
+		if self._transfer_started is None:
+			return None
+		now = time.time()
+		tdiff = time.time() - self._transfer_started
+		if tdiff < 1e-3:
+			return None
+		return self._bytes_transferred / tdiff
+
+	@property
+	def average_transfer_speed_str(self):
+		ats = self.average_transfer_speed()
+		if ats is None:
+			return "N/A"
+		else:
+			return f"{self._FilesizeFormatter(round(ats))}/sec"
+
+	@property
+	def throttle_bytes_per_sec(self):
+		return self._throttle_bytes_per_sec
+
+	@throttle_bytes_per_sec.setter
+	def throttle_bytes_per_sec(self, value: float):
+		self._throttle_bytes_per_sec = value
 
 	@property
 	def spoolname(self):
@@ -136,6 +167,7 @@ class DCCRecvTransfer():
 			f.seek(resume_offset)
 			while f.tell() < self._dcc_request.filesize:
 				chunk = await reader.read(max_chunksize)
+				self._bytes_transferred += len(chunk)
 				if len(chunk) == 0:
 					raise DCCTransferAbortedException("Peer closed connection of DCC transfer {self._dcc_request} after {f.tell()} bytes.")
 				f.write(chunk)
@@ -143,7 +175,11 @@ class DCCRecvTransfer():
 				if not self._dcc_request.turbo:
 					ack_msg = self._ACK_MSG.pack(f.tell() & 0xffffffff)
 					writer.write(ack_msg)
-		_log.info("DCC transfer finished successfully: %s", self._dcc_request)
+
+				if self.throttle_bytes_per_sec is not None:
+					throttle_delay = max_chunksize / self.throttle_bytes_per_sec
+					await asyncio.sleep(throttle_delay)
+		_log.info("DCC transfer finished successfully: %s at speed %s", self._dcc_request, self.average_transfer_speed_str)
 
 	def _determine_final_filename(self, filename):
 		with contextlib.suppress(FileExistsError):
@@ -222,6 +258,7 @@ class DCCRecvTransfer():
 				except asyncio.exceptions.TimeoutError as e:
 					raise DCCTransferTimeoutException(f"DCC passive connection on port {server.port} was never established by peer, timed out.") from e
 
+		self._transfer_started = time.time()
 		try:
 			await self._download_loop(spoolfile, resume_offset, reader, writer)
 		except:
