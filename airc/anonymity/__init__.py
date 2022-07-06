@@ -19,12 +19,4 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
-import airc.Logging
-import airc.client
-import airc.dcc
-import airc.anonymity
-import airc.Enums
-from .IRCServer import IRCServer
-from .IRCIdentity import IRCIdentity
-from .IRCIdentityGenerator import ListIRCIdentityGenerator
-from .IRCNetwork import IRCNetwork
+from .AnonymousIdentityGenerator import AnonymousIdentityGenerator

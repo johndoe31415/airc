@@ -18,13 +18,3 @@
 #	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
-
-import airc.Logging
-import airc.client
-import airc.dcc
-import airc.anonymity
-import airc.Enums
-from .IRCServer import IRCServer
-from .IRCIdentity import IRCIdentity
-from .IRCIdentityGenerator import ListIRCIdentityGenerator
-from .IRCNetwork import IRCNetwork

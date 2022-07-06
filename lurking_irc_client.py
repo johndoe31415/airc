@@ -85,11 +85,11 @@ class SimpleIRCClient():
 
 		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, password = self._args.password, use_ssl = self._args.use_tls)
 		irc_servers = [ irc_server ]
-		if len(self._args.nickname) == 0:
-			identities = [ airc.IRCIdentity(nickname = "x" + os.urandom(4).hex(), username = "bob") ]
-		else:
+		if len(self._args.nickname) > 0:
 			identities = [ airc.IRCIdentity(nickname = nickname, username = "bob") for nickname in self._args.nickname ]
-		idgen = airc.ListIRCIdentityGenerator(identities)
+			idgen = airc.ListIRCIdentityGenerator(identities)
+		else:
+			idgen = airc.anonymity.AnonymousIdentityGenerator()
 		network = airc.IRCNetwork(irc_client_class = airc.client.BasicIRCClient, irc_servers = irc_servers, identity_generator = idgen, client_configuration = client_configuration)
 		network.add_all_listeners(cbc)
 		network.start()

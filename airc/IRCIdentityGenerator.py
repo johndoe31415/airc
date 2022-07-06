@@ -26,7 +26,7 @@ class IRCIdentityGenerator():
 	def __iter__(self):
 		raise NotImplementedError()
 
-class ListIRCIdentityGenerator():
+class ListIRCIdentityGenerator(IRCIdentityGenerator):
 	def __init__(self, identities: list[IRCIdentity]):
 		self._identities = identities
 

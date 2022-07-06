@@ -57,11 +57,19 @@ class IRCIdentity():
 		else:
 			return None
 
-	def __str__(self):
+	def to_string(self, full = False):
 		data = [ self.nickname ]
+		if full:
+			if self.username is not None:
+				data.append(f"user = {self.username}")
+			if self.realname is not None:
+				data.append(f"real = {self.realname}")
 		if self.version is not None:
 			data.append(f"IRC client = \"{self.version}\"")
 		if self.timezone_hrs is not None:
 			data.append(f"TZ {self.timezone_hrs:+d} hrs")
 		data = ", ".join(data)
-		return f"{self.__class__.__name__}<{data}>"
+		return f"IRCIdentity<{data}>"
+
+	def __str__(self):
+		return self.to_string()
