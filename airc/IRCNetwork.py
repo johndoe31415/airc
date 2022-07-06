@@ -35,7 +35,7 @@ from .IRCConnection import IRCConnection
 _log = logging.getLogger(__spec__.name)
 
 class IRCNetwork():
-	def __init__(self, irc_client_class, irc_servers: list[IRCServer], identity_generator: IRCIdentityGenerator, client_configuration: ClientConfiguration | None):
+	def __init__(self, irc_client_class, irc_servers: list[IRCServer], identity_generator: IRCIdentityGenerator, client_configuration: ClientConfiguration | None, identifier = str | None):
 		self._bg_tasks = AsyncBackgroundTasks()
 		self._irc_client_class = irc_client_class
 		self._irc_servers = irc_servers
@@ -43,6 +43,7 @@ class IRCNetwork():
 		self._shutdown = False
 		self._connection = None
 		self._client_configuration = client_configuration if (client_configuration is not None) else ClientConfiguration()
+		self._identifier = identifier
 		self._callbacks = collections.defaultdict(list)
 
 	@property
@@ -52,6 +53,10 @@ class IRCNetwork():
 	@property
 	def connection(self):
 		return self._connection
+
+	@property
+	def identifier(self):
+		return self._identifier
 
 	@property
 	def client(self):
