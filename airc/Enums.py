@@ -64,7 +64,6 @@ class ConnectionState(enum.Enum):
 
 class StatEvent(enum.Enum):
 	ChannelKicked = "chan_kicked"
-	ChannelBanned = "chan_banned"
 	ChannelJoinAttempt = "chan_join_attempt"
 	ChannelJoinSuccess = "chan_join_success"
 	ChannelJoinFailureBanned = "chan_join_failure_banned"
