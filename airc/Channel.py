@@ -21,6 +21,7 @@
 
 import contextlib
 from airc.EventObject import EventObject
+from airc.Enums import StatEvent
 
 class Channel(EventObject):
 	def __init__(self, channel_name: str):
@@ -48,7 +49,7 @@ class Channel(EventObject):
 
 	@property
 	def stats(self):
-		return self._stats
+		return { event.value: counter for (event, counter) in self._stats.items() }
 
 	@joined.setter
 	def joined(self, value: bool):
@@ -69,8 +70,8 @@ class Channel(EventObject):
 			self._users.remove(old_nickname)
 			self._users.add(new_nickname)
 
-	def record_stat(self, name):
-		self._stats[name] = self._stats.get(name, 0) + 1
+	def record_stat(self, event: StatEvent):
+		self._stats[event] = self._stats.get(event, 0) + 1
 
 	def get_status(self):
 		return {
