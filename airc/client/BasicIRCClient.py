@@ -24,7 +24,7 @@ import logging
 import datetime
 from airc.Channel import Channel
 from airc.ExpectedResponse import ExpectedResponse
-from airc.Enums import IRCTimeout, IRCCallbackType, DCCMessageType
+from airc.Enums import IRCTimeout, IRCCallbackType, DCCMessageType, StatEvent
 from airc.ReplyCode import ReplyCode
 from airc.Tools import NameTools, TimeTools
 from airc.dcc.DCCRequest import DCCRequestParser
@@ -54,22 +54,29 @@ class BasicIRCClient(RawIRCClient):
 		self._channels[channel_name.lower()] = channel
 		while True:
 			if not channel.joined:
-				channel.record_stat("attempted_join")
-				finish_conditions = tuple([lambda msg: msg.has_param(0, channel.name, ignore_case = True) and msg.is_cmdcode("JOIN") ])
+				channel.record_stat(StatEvent.ChannelJoinAttempt)
+				finish_conditions = tuple([lambda msg: (msg.is_cmdcode("join") and msg.has_param(0, channel.name, ignore_case = True)) or (msg.is_cmdcode(ReplyCode.ERR_BANNEDFROMCHAN) and msg.has_param(1, channel.name, ignore_case = True)) ])
 				try:
-					await asyncio.wait_for(self._irc_connection.tx_message(f"JOIN {channel.name}", expect = ExpectedResponse(finish_conditions = finish_conditions)), timeout = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs))
-					channel.joined = True
+					response = await asyncio.wait_for(self._irc_connection.tx_message(f"JOIN {channel.name}", expect = ExpectedResponse(finish_conditions = finish_conditions)), timeout = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs))
+					response = response[0]
+					if response.is_cmdcode("JOIN"):
+						channel.joined = True
+						channel.record_stat(StatEvent.ChannelJoinSuccess)
+					else:
+						reason = response.get_param(2)
+						delay = self.config.timeout(IRCTimeout.RejoinChannelBannedTimeSecs)
+						_log.error("Joining of %s did not work because we are banned (%s), waiting for %d seconds before retrying.", channel.name, reason, delay)
+						channel.record_stat(StatEvent.ChannelJoinFailureBanned)
 				except asyncio.exceptions.TimeoutError:
 					delay = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs)
 					_log.error("Joining of %s timed out, waiting for %d seconds before retrying.", channel.name, delay)
-					channel.record_stat("timed_out_join")
+					channel.record_stat(StatEvent.ChannelJoinFailureTimeout)
 					await asyncio.sleep(delay)
 
 			joined_before = channel.joined
 			await channel.event()
 			if joined_before and (not channel.joined):
 				# We were kicked. Delay and retry
-				channel.record_stat("kicked")
 				delay = self.config.timeout(IRCTimeout.RejoinChannelTimeSecs)
 				_log.info("Will rejoin %s after %d seconds.", channel.name, delay)
 				await asyncio.sleep(delay)
@@ -115,8 +122,6 @@ class BasicIRCClient(RawIRCClient):
 			if dcc_request.type == DCCMessageType.Send:
 				dcc_transfer_handle = self.config.dcc_controller.handle_receive(self, nickname, dcc_request)
 				self.fire_callback(IRCCallbackType.DCCTransferStarted, nickname, dcc_transfer_handle)
-
-
 		return False
 
 	def _handle_ctcp_reply(self, nickname, text):
@@ -158,29 +163,38 @@ class BasicIRCClient(RawIRCClient):
 			if channel is not None:
 				channel.remove_user(nickname)
 			if nickname == self.our_nickname:
+				channel.record_stat(StatEvent.ChannelKicked)
 				_log.warning("We were kicked out of %s by %s: %s", channel.name, msg.origin, reason)
 				channel.joined = False
+				self.fire_callback(IRCCallbackType.KickedFromChannel, channel.name, msg.origin.nickname, reason)
 		elif msg.is_cmdcode("PRIVMSG") and msg.origin.is_user_msg:
 			# We received a private message or channel message
-			is_privmsg = not msg.get_param(0).startswith("#")
+			is_chanmsg = NameTools.is_channel_name(msg.get_param(0))
 			text = msg.get_param(1)
-			if is_privmsg and (len(text) >= 2) and text.startswith("\x01") and text.endswith("\x01"):
+			if (not is_chanmsg) and (len(text) >= 2) and text.startswith("\x01") and text.endswith("\x01"):
 				text = text[1 : -1]
 				if not self._handle_ctcp_request(msg.origin.nickname, text):
 					self.fire_callback(IRCCallbackType.CTCPRequest, msg.origin.nickname, text)
-			elif is_privmsg:
-				self.fire_callback(IRCCallbackType.PrivateMessage, msg.origin.nickname, text)
-			else:
+			elif is_chanmsg:
 				channel_name = msg.get_param(0)
 				channel = self.get_channel(channel_name)
-				channel.record_stat("chanmsg")
+				channel.record_stat(StatEvent.ChannelMessage)
 				self.fire_callback(IRCCallbackType.ChannelMessage, msg.origin.nickname, channel_name, text)
+			else:
+				self.fire_callback(IRCCallbackType.PrivateMessage, msg.origin.nickname, text)
+
 		elif msg.is_cmdcode("NOTICE") and msg.origin.is_user_msg:
 			# We received a notice
+			is_chanmsg = NameTools.is_channel_name(msg.get_param(0))
 			text = msg.get_param(1)
-			if (len(text) >= 2) and text.startswith("\x01") and text.endswith("\x01"):
+			if (not is_chanmsg) and (len(text) >= 2) and text.startswith("\x01") and text.endswith("\x01"):
 				text = text[1 : -1]
 				if not self._handle_ctcp_reply(msg.origin.nickname, text):
 					self.fire_callback(IRCCallbackType.CTCPReply, msg.origin.nickname, text)
+			elif is_chanmsg:
+				channel_name = msg.get_param(0)
+				channel = self.get_channel(channel_name)
+				channel.record_stat(StatEvent.ChannelNotice)
+				self.fire_callback(IRCCallbackType.ChannelNotice, msg.origin.nickname, channel_name, text)
 			else:
-				self.fire_callback(IRCCallbackType.Notice, msg.origin.nickname, text)
+				self.fire_callback(IRCCallbackType.PrivateNotice, msg.origin.nickname, text)

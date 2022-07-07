@@ -40,6 +40,10 @@ class NameTools():
 			mode = Usermode.Regular
 		return cls._Nickname(nickname = nickname, mode = mode)
 
+	@classmethod
+	def is_channel_name(self, name: str):
+		return (len(name) > 0) and (name[0] in "#&+!")
+
 class TextTools():
 	_CONTROL_CODE_REGEX = re.compile("(\x1e|\x1f|\x1d|\x02|\x0f|\x03(\\d{1,2}(,\\d{1,2})?)?)")
 

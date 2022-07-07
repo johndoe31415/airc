@@ -30,17 +30,23 @@ class IRCTimeout(enum.IntEnum):
 	ReconnectTimeAfterTLSErrorSecs = 5
 	JoinChannelTimeoutSecs = 6
 	RejoinChannelTimeSecs = 7
-	DCCAckResumeTimeoutSecs = 8
-	DCCPassiveConnectTimeoutSecs = 9
+	RejoinChannelBannedTimeSecs = 8
+	DCCAckResumeTimeoutSecs = 9
+	DCCPassiveConnectTimeoutSecs = 10
 
 class IRCCallbackType(enum.Enum):
-	PrivateMessage = "privmsg"
-	ChannelMessage = "chanmsg"
-	Notice = "notice"
+	PrivateMessage = "priv_msg"
+	ChannelMessage = "chan_msg"
+	PrivateNotice = "priv_notice"
+	ChannelNotice = "chan_notice"
 	CTCPRequest = "ctcp_request"
 	CTCPReply = "ctcp_reply"
 	IncomingDCCRequest = "dcc_xfer_request"
 	DCCTransferStarted = "dcc_xfer_started"
+	DCCTransferInterrupted = "dcc_xfer_interrupted"
+	DCCTransferCompleted = "dcc_xfer_completed"
+	KickedFromChannel = "chan_kicked"
+	BannedFromChannel = "chan_banned"
 
 class Usermode(enum.IntEnum):
 	Regular = 0
@@ -55,3 +61,13 @@ class ConnectionState(enum.Enum):
 	Unconnected = "unconnected"
 	Registering = "registering"
 	Connected = "connected"
+
+class StatEvent(enum.Enum):
+	ChannelKicked = "chan_kicked"
+	ChannelBanned = "chan_banned"
+	ChannelJoinAttempt = "chan_join_attempt"
+	ChannelJoinSuccess = "chan_join_success"
+	ChannelJoinFailureBanned = "chan_join_failure_banned"
+	ChannelJoinFailureTimeout = "chan_join_failure_timeout"
+	ChannelMessage = "chan_msg"
+	ChannelNotice = "chan_notice"

@@ -58,7 +58,7 @@ class SimpleIRCClient():
 			def replies(self):
 				return self._replies
 
-			async def on_privmsg(self, irc_client, nickname, text):
+			async def on_priv_msg(self, irc_client, nickname, text):
 				#irc_client.privmsg(nickname, f"you said '{text}', {nickname}, that's not nice")
 				pass
 
