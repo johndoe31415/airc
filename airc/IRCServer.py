@@ -22,11 +22,12 @@
 import ssl
 
 class IRCServer():
-	def __init__(self, hostname: str, port: int = 6666, use_ssl: bool = False, password: str | None = None):
+	def __init__(self, hostname: str, port: int = 6666, use_ssl: bool = False, tls_insecure: bool = False, password: str | None = None):
 		self._hostname = hostname
 		self._port = port
 		self._password = password
 		self._use_ssl = use_ssl
+		self._tls_insecure = tls_insecure
 
 	@property
 	def hostname(self):
@@ -41,6 +42,10 @@ class IRCServer():
 		return self._use_ssl
 
 	@property
+	def tls_insecure(self):
+		return self._tls_insecure
+
+	@property
 	def password(self):
 		return self._password
 
@@ -50,10 +55,15 @@ class IRCServer():
 			return None
 		else:
 			ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-			ssl_ctx.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_COMPRESSION
-			ssl_ctx.load_verify_locations(capath = "/etc/ssl/certs")
-			ssl_ctx.check_hostname = True
-			ssl_ctx.set_ciphers("!NULL:!EXP:!LOW:!MEDIUM:!ADH:!AECDH:!IDEA:!SEED:!MD5:!RC4:!DES:!DSS:!CAMELLIA:!AESCCM8:HIGH+EECDH:HIGH+EDH:!SHA:+SHA256:+RSA:+AES:+DHE:+ARIA")
+			if not self._tls_insecure:
+				ssl_ctx.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_COMPRESSION
+				ssl_ctx.load_verify_locations(capath = "/etc/ssl/certs")
+				ssl_ctx.check_hostname = True
+				ssl_ctx.set_ciphers("!NULL:!EXP:!LOW:!MEDIUM:!ADH:!AECDH:!IDEA:!SEED:!MD5:!RC4:!DES:!DSS:!CAMELLIA:!AESCCM8:HIGH+EECDH:HIGH+EDH:!SHA:+SHA256:+RSA:+AES:+DHE:+ARIA")
+			else:
+				ssl_ctx.verify_mode = ssl.CERT_NONE
+				ssl_ctx.check_hostname = False
+
 			return ssl_ctx
 
 	def __str__(self):
