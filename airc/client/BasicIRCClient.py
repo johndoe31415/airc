@@ -54,6 +54,7 @@ class BasicIRCClient(RawIRCClient):
 		self._channels[channel_name.lower()] = channel
 		while True:
 			if not channel.joined:
+				channel.record_stat("attempted_join")
 				finish_conditions = tuple([lambda msg: msg.has_param(0, channel.name, ignore_case = True) and msg.is_cmdcode("JOIN") ])
 				try:
 					await asyncio.wait_for(self._irc_connection.tx_message(f"JOIN {channel.name}", expect = ExpectedResponse(finish_conditions = finish_conditions)), timeout = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs))
@@ -61,12 +62,14 @@ class BasicIRCClient(RawIRCClient):
 				except asyncio.exceptions.TimeoutError:
 					delay = self.config.timeout(IRCTimeout.JoinChannelTimeoutSecs)
 					_log.error("Joining of %s timed out, waiting for %d seconds before retrying.", channel.name, delay)
+					channel.record_stat("timed_out_join")
 					await asyncio.sleep(delay)
 
 			joined_before = channel.joined
 			await channel.event()
 			if joined_before and (not channel.joined):
 				# We were kicked. Delay and retry
+				channel.record_stat("kicked")
 				delay = self.config.timeout(IRCTimeout.RejoinChannelTimeSecs)
 				_log.info("Will rejoin %s after %d seconds.", channel.name, delay)
 				await asyncio.sleep(delay)
@@ -169,6 +172,8 @@ class BasicIRCClient(RawIRCClient):
 				self.fire_callback(IRCCallbackType.PrivateMessage, msg.origin.nickname, text)
 			else:
 				channel_name = msg.get_param(0)
+				channel = self.get_channel(channel_name)
+				channel.record_stat("chanmsg")
 				self.fire_callback(IRCCallbackType.ChannelMessage, msg.origin.nickname, channel_name, text)
 		elif msg.is_cmdcode("NOTICE") and msg.origin.is_user_msg:
 			# We received a notice

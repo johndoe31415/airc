@@ -71,5 +71,12 @@ class IRCIdentity():
 		data = ", ".join(data)
 		return f"IRCIdentity<{data}>"
 
+	def as_dict(self):
+		return {
+			"nickname":	self._nickname,
+			"username":	self._username,
+			"realname": self._realname,
+		}
+
 	def __str__(self):
 		return self.to_string()

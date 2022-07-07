@@ -50,3 +50,8 @@ class Usermode(enum.IntEnum):
 class DCCMessageType(enum.IntEnum):
 	Send = 0
 	Accept = 1
+
+class ConnectionState(enum.Enum):
+	Unconnected = "unconnected"
+	Registering = "registering"
+	Connected = "connected"

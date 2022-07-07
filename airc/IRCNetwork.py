@@ -24,7 +24,7 @@ import logging
 import socket
 import ssl
 import collections
-from airc.Enums import IRCTimeout, IRCCallbackType
+from airc.Enums import IRCTimeout, IRCCallbackType, ConnectionState
 from airc.Exceptions import OutOfValidNicknamesException, ServerSeveredConnectionException, ServerMessageParseException
 from airc.AsyncBackgroundTasks import AsyncBackgroundTasks
 from airc.client import ClientConfiguration
@@ -45,6 +45,26 @@ class IRCNetwork():
 		self._client_configuration = client_configuration if (client_configuration is not None) else ClientConfiguration()
 		self._identifier = identifier
 		self._callbacks = collections.defaultdict(list)
+
+	@property
+	def connection_state(self):
+		if self._connection is None:
+			return ConnectionState.Unconnected
+		elif not self._connection.registration_complete:
+			return ConnectionState.Registering
+		else:
+			return ConnectionState.Connected
+
+	def get_status(self):
+		result = {
+			"name":		self.identifier,
+			"state":	self.connection_state.value,
+		}
+		if self._connection is not None:
+			result["channels"] = [ channel.get_status() for channel in self._connection.client.channels ]
+			result["original_identity"] = self._connection.identity.as_dict() if (self._connection.identity is not None) else None
+			result["current_nickname"] = self._connection.client.our_nickname
+		return result
 
 	@property
 	def irc_client_class(self):

@@ -28,6 +28,7 @@ class Channel(EventObject):
 		self._channel_name = channel_name
 		self._joined = False
 		self._users = set()
+		self._stats = { }
 
 	@property
 	def name(self):
@@ -38,8 +39,16 @@ class Channel(EventObject):
 		return self._joined
 
 	@property
+	def user_count(self):
+		return len(self._users)
+
+	@property
 	def users(self):
 		return iter(self._users)
+
+	@property
+	def stats(self):
+		return self._stats
 
 	@joined.setter
 	def joined(self, value: bool):
@@ -60,11 +69,22 @@ class Channel(EventObject):
 			self._users.remove(old_nickname)
 			self._users.add(new_nickname)
 
+	def record_stat(self, name):
+		self._stats[name] = self._stats.get(name, 0) + 1
+
+	def get_status(self):
+		return {
+			"name":			self.name,
+			"joined":		self.joined,
+			"user_count":	self.user_count,
+			"stats":		self.stats,
+		}
+
 	def __repr__(self):
 		if not self.joined:
 			return f"Channel<{self.name}, unjoined>"
-		elif len(self._users) == 0:
+		elif self.user_count == 0:
 			return f"Channel<{self.name}, no users>"
 		else:
 			user_str = " ".join(sorted(self.users))
-			return f"Channel<{self.name}, {len(self._users)} users: {user_str}>"
+			return f"Channel<{self.name}, {self.user_count} users: {user_str}>"

@@ -41,11 +41,16 @@ class IRCConnection():
 		self._registration_complete = asyncio.Event()
 		self._msghandler = IRCMessageHandler()
 		self._client = self._irc_network.irc_client_class(irc_network = self._irc_network, irc_connection = self)
+		self._identity = None
 		self._pending_responses = [ ]
 
 	@property
 	def client(self):
 		return self._client
+
+	@property
+	def identity(self):
+		return self._identity
 
 	@property
 	def irc_server(self):
@@ -91,6 +96,7 @@ class IRCConnection():
 			rsp = self.tx_message(f"PASS :{self._irc_server.password}")
 
 		for irc_identity in self._irc_network.identity_generator:
+			self._identity = irc_identity
 			_log.debug("Registering at server %s using identity %s", self._irc_server, irc_identity)
 
 			# Attempt to register under this username
