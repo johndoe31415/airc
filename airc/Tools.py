@@ -22,6 +22,7 @@
 import collections
 import datetime
 import asyncio
+import re
 from airc.Enums import Usermode
 
 class NameTools():
@@ -38,6 +39,14 @@ class NameTools():
 		else:
 			mode = Usermode.Regular
 		return cls._Nickname(nickname = nickname, mode = mode)
+
+class TextTools():
+	_CONTROL_CODE_REGEX = re.compile("(\x1e|\x1f|\x1d|\x02|\x0f|\x03(\\d{1,2}(,\\d{1,2})?)?)")
+
+	@classmethod
+	def strip_all_control_codes(cls, text: str):
+		text = cls._CONTROL_CODE_REGEX.sub("", text)
+		return text
 
 class TimeTools():
 	@classmethod
