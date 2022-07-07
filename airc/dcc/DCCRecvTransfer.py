@@ -33,7 +33,7 @@ from airc.dcc.DCCRequest import DCCRequestParser
 from airc.Exceptions import DCCTransferAbortedException, DCCTransferDataMismatchException, DCCTransferTimeoutException, DCCResourcesExhaustedException, DCCPassiveTransferUnderconfiguredException
 from airc.Tools import NumberTools
 from airc.ExpectedResponse import ExpectedResponse
-from airc.Enums import IRCTimeout, IRCCallbackType
+from airc.Enums import IRCTimeout, IRCCallbackType, DCCTransferState
 from airc.FilesizeFormatter import FilesizeFormatter
 from .SpeedAverager import SpeedAverager
 
@@ -54,6 +54,28 @@ class DCCRecvTransfer():
 		self._transfer_started = None
 		self._bytes_transferred = 0
 		self._speed_averager = SpeedAverager()
+		self._state = DCCTransferState.Pending
+		self._user_ctx = None
+
+	@property
+	def state(self):
+		return self._state
+
+	@property
+	def user_ctx(self):
+		return self._user_ctx
+
+	@user_ctx.setter
+	def user_ctx(self, value):
+		self._user_ctx = value
+
+	@property
+	def nickname(self):
+		return self._nickname
+
+	@property
+	def dcc_request(self):
+		return self._dcc_request
 
 	@property
 	def speed_averager(self):
@@ -105,7 +127,7 @@ class DCCRecvTransfer():
 		if not self._dcc_controller.config.autoaccept:
 			# Let the client make a decision
 			decision = DCCDecision(filename = self._dcc_controller.config.autoaccept_download_dir + "/" + filename)
-			await asyncio.gather(*self._irc_client.fire_callback(IRCCallbackType.IncomingDCCRequest, self._nickname, self._dcc_request, decision))
+			await asyncio.gather(*self._irc_client.fire_callback(IRCCallbackType.IncomingDCCRequest, self, decision))
 			if not decision.accept:
 				# Handler refuses to accept this file.
 				_log.info("Incoming DCC request %s was rejected by handler. Ignoring the request.", self._dcc_request)
@@ -202,7 +224,7 @@ class DCCRecvTransfer():
 				return try_filename
 			i += 1
 
-	async def handle(self):
+	async def _handle(self):
 		if self._dcc_request.is_passive and (not self._dcc_controller.config.enable_passive):
 			raise DCCPassiveTransferUnderconfiguredException(f"Passive DCC transfer requested in {self._dcc_request}, but passive transfers are disabled.")
 
@@ -221,9 +243,10 @@ class DCCRecvTransfer():
 		# hopefully don't affect us.
 		resume_offset = os.stat(spoolfile).st_size
 		if self._dcc_controller.config.discard_tail_at_resume > 0:
-			resume_offset = NumberTools.round_down(resume_offset, 128 * 1024)
+			resume_offset = NumberTools.round_down(resume_offset, self._dcc_controller.config.discard_tail_at_resume)
 
 		if resume_offset != 0:
+			self._state = DCCTransferState.Negotiating
 			# Resume request before we connect
 			text = f"DCC RESUME {self._dcc_request.filename} {self._dcc_request.port} {resume_offset}"
 			if self._dcc_request.is_passive:
@@ -250,6 +273,7 @@ class DCCRecvTransfer():
 				_log.info("Resuming active DCC transfer from %s at offset %d", self._nickname, resume_offset)
 			(reader, writer) = await asyncio.open_connection(host = str(self._dcc_request.ip), port = self._dcc_request.port)
 		else:
+			self._state = DCCTransferState.Negotiating
 			with await self._dcc_controller.allocate_passive_port() as server:
 				# Let the peer know which port we're listening on
 				self._irc_client.ctcp_request(self._nickname, f"DCC SEND {self._dcc_request.filename} {int(self._dcc_controller.config.public_ip)} {server.port} {self._dcc_request.filesize} {self._dcc_request.passive_token}")
@@ -264,8 +288,10 @@ class DCCRecvTransfer():
 				except asyncio.exceptions.TimeoutError as e:
 					raise DCCTransferTimeoutException(f"DCC passive connection on port {server.port} was never established by peer, timed out.") from e
 
+		self._irc_client.fire_callback(IRCCallbackType.DCCTransferStarted, self)
 		self._transfer_started = time.time()
 		try:
+			self._state = DCCTransferState.Transferring
 			await self._download_loop(spoolfile, resume_offset, reader, writer)
 		except:
 			# Transfer aborted, move spoolfile to stale
@@ -275,3 +301,13 @@ class DCCRecvTransfer():
 			# Transfer completed, move spoolfile to download dir
 			destination = self._determine_final_filename(destination)
 			shutil.move(spoolfile, destination)
+
+	async def handle(self):
+		try:
+			await self._handle()
+		except:
+			self._state = DCCTransferState.Failed
+			self._irc_client.fire_callback(IRCCallbackType.DCCTransferInterrupted, self)
+		else:
+			self._state = DCCTransferState.Completed
+			self._irc_client.fire_callback(IRCCallbackType.DCCTransferCompleted, self)

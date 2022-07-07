@@ -21,6 +21,7 @@
 
 import re
 import ipaddress
+import uuid
 from airc.Enums import DCCMessageType
 from airc.Exceptions import DCCRequestParseException
 
@@ -34,6 +35,7 @@ class DCCRequest():
 		self._filesize = filesize
 		self._passive_token = passive_token
 		self._turbo = turbo
+		self._uuid = uuid.uuid4()
 
 	@property
 	def type(self):
@@ -62,6 +64,10 @@ class DCCRequest():
 	@property
 	def turbo(self):
 		return self._turbo
+
+	@property
+	def uuid(self):
+		return self._uuid
 
 	@property
 	def is_passive(self):

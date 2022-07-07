@@ -70,3 +70,10 @@ class StatEvent(enum.Enum):
 	ChannelJoinFailureTimeout = "chan_join_failure_timeout"
 	ChannelMessage = "chan_msg"
 	ChannelNotice = "chan_notice"
+
+class DCCTransferState(enum.IntEnum):
+	Pending = 0
+	Negotiating = 1
+	Transferring = 2
+	Complete = 3
+	Failed = 4
