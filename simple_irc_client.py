@@ -46,7 +46,7 @@ class SimpleIRCClient():
 		logging.basicConfig(format = "{name:>40s} [{levelname:.2s}]: {message}", style = "{", level = loglevel)
 
 	async def main(self):
-		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, use_ssl = self._args.use_tls)
+		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, use_tls = self._args.use_tls)
 		irc_servers = [ irc_server ]
 		if len(self._args.nickname) == 0:
 			identities = [ airc.IRCIdentity(nickname = "x" + os.urandom(4).hex()) ]

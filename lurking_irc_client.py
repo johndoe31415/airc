@@ -84,7 +84,7 @@ class SimpleIRCClient():
 		client_configuration.handle_ctcp_ping = True
 		client_configuration.dcc_controller = dcc_ctrlr
 
-		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, password = self._args.password, use_ssl = self._args.use_tls)
+		irc_server = airc.IRCServer(hostname = self._args.hostname, port = self._args.port, password = self._args.password, use_tls = self._args.use_tls)
 		irc_servers = [ irc_server ]
 		if len(self._args.nickname) > 0:
 			identities = [ airc.IRCIdentity(nickname = nickname, username = "bob") for nickname in self._args.nickname ]

@@ -30,13 +30,17 @@ class IRCServerTests(unittest.TestCase):
 
 	def test_default_values(self):
 		srv = IRCServer(hostname = "freenode.org")
-		self.assertEqual(srv.port, 6666)
-		self.assertFalse(srv.use_ssl)
+		self.assertEqual(srv.port, 6667)
+		self.assertFalse(srv.use_tls)
 		self.assertEqual(srv.password, None)
 
+		srv = IRCServer(hostname = "freenode.org", use_tls = True)
+		self.assertEqual(srv.port, 6697)
+		self.assertTrue(srv.use_tls)
+
 	def test_ssl(self):
-		srv = IRCServer(hostname = "freenode.org", use_ssl = True)
-		self.assertTrue(srv.use_ssl)
+		srv = IRCServer(hostname = "freenode.org", use_tls = True)
+		self.assertTrue(srv.use_tls)
 
 	def test_password(self):
 		srv = IRCServer(hostname = "freenode.org", password = "secret")

@@ -22,11 +22,16 @@
 import ssl
 
 class IRCServer():
-	def __init__(self, hostname: str, port: int = 6666, use_ssl: bool = False, tls_insecure: bool = False, password: str | None = None):
+	def __init__(self, hostname: str, port: int | None = None, use_tls: bool = False, tls_insecure: bool = False, password: str | None = None):
 		self._hostname = hostname
-		self._port = port
+		if port is not None:
+			self._port = port
+		elif not use_tls:
+			self._port = 6667
+		else:
+			self._port = 6697
 		self._password = password
-		self._use_ssl = use_ssl
+		self._use_tls = use_tls
 		self._tls_insecure = tls_insecure
 
 	@property
@@ -38,8 +43,8 @@ class IRCServer():
 		return self._port
 
 	@property
-	def use_ssl(self):
-		return self._use_ssl
+	def use_tls(self):
+		return self._use_tls
 
 	@property
 	def tls_insecure(self):
@@ -50,26 +55,26 @@ class IRCServer():
 		return self._password
 
 	@property
-	def ssl_ctx(self):
-		if self._use_ssl is False:
+	def tls_ctx(self):
+		if self._use_tls is False:
 			return None
 		else:
-			ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+			tls_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 			if not self._tls_insecure:
-				ssl_ctx.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_COMPRESSION
-				ssl_ctx.load_verify_locations(capath = "/etc/ssl/certs")
-				ssl_ctx.check_hostname = True
-				ssl_ctx.set_ciphers("!NULL:!EXP:!LOW:!MEDIUM:!ADH:!AECDH:!IDEA:!SEED:!MD5:!RC4:!DES:!DSS:!CAMELLIA:!AESCCM8:HIGH+EECDH:HIGH+EDH:!SHA:+SHA256:+RSA:+AES:+DHE:+ARIA")
+				tls_ctx.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_COMPRESSION
+				tls_ctx.load_verify_locations(capath = "/etc/ssl/certs")
+				tls_ctx.check_hostname = True
+				tls_ctx.set_ciphers("!NULL:!EXP:!LOW:!MEDIUM:!ADH:!AECDH:!IDEA:!SEED:!MD5:!RC4:!DES:!DSS:!CAMELLIA:!AESCCM8:HIGH+EECDH:HIGH+EDH:!SHA:+SHA256:+RSA:+AES:+DHE:+ARIA")
 			else:
-				ssl_ctx.verify_mode = ssl.CERT_NONE
-				ssl_ctx.check_hostname = False
+				tls_ctx.verify_mode = ssl.CERT_NONE
+				tls_ctx.check_hostname = False
 
-			return ssl_ctx
+			return tls_ctx
 
 	def __str__(self):
 		strs = [ f"{self.hostname}:{self.port}" ]
-		if self.use_ssl:
-			strs.append("SSL")
+		if self.use_tls:
+			strs.append("TLS")
 		if self.password is not None:
 			strs.append("PASSWD")
 		strs = " ".join(strs)
