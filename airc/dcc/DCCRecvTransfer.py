@@ -62,7 +62,6 @@ class DCCRecvTransfer():
 	def average_transfer_speed(self):
 		if self._transfer_started is None:
 			return None
-		now = time.time()
 		tdiff = time.time() - self._transfer_started
 		if tdiff < 1e-3:
 			return None
