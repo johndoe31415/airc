@@ -66,8 +66,8 @@ class IRCServer():
 				tls_ctx.check_hostname = True
 				tls_ctx.set_ciphers("!NULL:!EXP:!LOW:!MEDIUM:!ADH:!AECDH:!IDEA:!SEED:!MD5:!RC4:!DES:!DSS:!CAMELLIA:!AESCCM8:HIGH+EECDH:HIGH+EDH:!SHA:+SHA256:+RSA:+AES:+DHE:+ARIA")
 			else:
-				tls_ctx.verify_mode = ssl.CERT_NONE
 				tls_ctx.check_hostname = False
+				tls_ctx.verify_mode = ssl.CERT_NONE
 
 			return tls_ctx
 
