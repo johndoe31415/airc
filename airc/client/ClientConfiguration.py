@@ -12,7 +12,7 @@ class ClientConfiguration():
 			IRCTimeout.ReconnectTimeAfterServerParseExceptionSecs:		10,
 			IRCTimeout.ReconnectTimeAfterTLSErrorSecs:					10,
 			IRCTimeout.JoinChannelTimeoutSecs:							20,
-			IRCTimeout.RejoinChannelTimeSecs:							10,
+			IRCTimeout.RejoinChannelTimeSecs:							150,
 			IRCTimeout.RejoinChannelBannedTimeSecs:						1800,
 			IRCTimeout.DCCAckResumeTimeoutSecs:							20,
 			IRCTimeout.DCCPassiveConnectTimeoutSecs:					20,
