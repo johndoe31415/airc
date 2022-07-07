@@ -35,6 +35,7 @@ from airc.Tools import NumberTools
 from airc.ExpectedResponse import ExpectedResponse
 from airc.Enums import IRCTimeout, IRCCallbackType
 from airc.FilesizeFormatter import FilesizeFormatter
+from .SpeedAverager import SpeedAverager
 
 _log = logging.getLogger(__spec__.name)
 
@@ -52,6 +53,11 @@ class DCCRecvTransfer():
 		self._throttle_bytes_per_sec = throttle_bytes_per_sec
 		self._transfer_started = None
 		self._bytes_transferred = 0
+		self._speed_averager = SpeedAverager()
+
+	@property
+	def speed_averager(self):
+		return self._speed_averager
 
 	def average_transfer_speed(self):
 		if self._transfer_started is None:
@@ -168,6 +174,7 @@ class DCCRecvTransfer():
 			while f.tell() < self._dcc_request.filesize:
 				chunk = await reader.read(max_chunksize)
 				self._bytes_transferred += len(chunk)
+				self._speed_averager.add(self._bytes_transferred)
 				if len(chunk) == 0:
 					raise DCCTransferAbortedException("Peer closed connection of DCC transfer {self._dcc_request} after {f.tell()} bytes.")
 				f.write(chunk)
