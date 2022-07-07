@@ -72,4 +72,3 @@ if __name__ == "__main__":
 		print(sa._pos)
 		print(sa.speed)
 		time.sleep(0.1)
-
