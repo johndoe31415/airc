@@ -61,8 +61,10 @@ class RawIRCClient():
 		return self._irc_connection
 
 	def fire_callback(self, callback_type: IRCCallbackType, *args):
+		tasks = [ ]
 		for callback in self.irc_network.get_listeners(callback_type):
-			self._bg_tasks.create_task(callback(self, *args))
+			tasks.append(self._bg_tasks.create_task(callback(self, *args)))
+		return tasks
 
 	def privmsg(self, nickname, text, expect = None):
 		return self._irc_connection.tx_message(f"PRIVMSG {nickname} :{text}", expect = expect)

@@ -98,14 +98,14 @@ class DCCRecvTransfer():
 			sanitized_filename = "_"
 		return sanitized_filename
 
-	def _determine_acceptance(self):
+	async def _determine_acceptance(self):
 		_log.info("Handling incoming DCC transfer request %s", self._dcc_request)
 		# Someone wants to send us a file. First decide if we want it.
 		filename = self._sanitize_filename(self._dcc_request.filename)
 		if not self._dcc_controller.config.autoaccept:
 			# Let the client make a decision
 			decision = DCCDecision(filename = self._dcc_controller.config.autoaccept_download_dir + "/" + filename)
-			self._irc_client.fire_callback(IRCCallbackType.IncomingDCCRequest, self._dcc_request, decision)
+			await asyncio.gather(*self._irc_client.fire_callback(IRCCallbackType.IncomingDCCRequest, self._nickname, self._dcc_request, decision))
 			if not decision.accept:
 				# Handler refuses to accept this file.
 				_log.info("Incoming DCC request %s was rejected by handler. Ignoring the request.", self._dcc_request)
@@ -208,7 +208,7 @@ class DCCRecvTransfer():
 
 		# Check if we want to accept this file in the first place and, if so,
 		# where to (tentatively) store it.
-		destination = self._determine_acceptance()
+		destination = await self._determine_acceptance()
 		if destination is None:
 			# We don't want this file.
 			return
