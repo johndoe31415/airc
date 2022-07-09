@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 #
 #	FilesizeFormatter - Displaying file size in native units.
-#	Copyright (C) 2011-2013 Johannes Bauer
-#	
+#	Copyright (C) 2011-2022 Johannes Bauer
+#
 #	This file is part of pycommon.
 #
 #	pycommon is free software; you can redistribute it and/or modify
@@ -33,7 +33,7 @@ class FilesizeFormatter():
 	]
 	_unitsdict = { unit.lower(): pwr for (unit, pwr) in _units }
 
-	def __init__(self, base1000 = True):		
+	def __init__(self, base1000 = True):
 		self._base = [ 1024, 1000 ][ base1000 ]
 		self._basechar = [ "i", "" ][ base1000 ]
 
@@ -75,11 +75,10 @@ class FilesizeFormatter():
 if __name__ == "__main__":
 	for fsfmtter in [ FilesizeFormatter(), FilesizeFormatter(True) ]:
 		for pot in range(15):
-			q = round(3.141592653589793 * (10 ** pot))				
+			q = round(3.141592653589793 * (10 ** pot))
 			print("%20d %s" % (q, fsfmtter(q)))
 		print(fsfmtter.decode("123"))
 		print(fsfmtter.decode("123.45k"))
 		print(fsfmtter.decode("123.45m"))
 		print(fsfmtter.decode("123.45g"))
 		print("-" * 80)
-

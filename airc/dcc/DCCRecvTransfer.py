@@ -308,6 +308,7 @@ class DCCRecvTransfer():
 		except:
 			self._state = DCCTransferState.Failed
 			self._irc_client.fire_callback(IRCCallbackType.DCCTransferInterrupted, self)
+			raise
 		else:
-			self._state = DCCTransferState.Completed
+			self._state = DCCTransferState.Complete
 			self._irc_client.fire_callback(IRCCallbackType.DCCTransferCompleted, self)

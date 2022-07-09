@@ -42,6 +42,7 @@ class RandomDist():
 		for (key, value) in self._values:
 			if randval < value:
 				return key
+		assert(False)
 
 if __name__ == "__main__":
 	rdist = RandomDist({

@@ -41,7 +41,7 @@ class NameTools():
 		return cls._Nickname(nickname = nickname, mode = mode)
 
 	@classmethod
-	def is_channel_name(self, name: str):
+	def is_channel_name(cls, name: str):
 		return (len(name) > 0) and (name[0] in "#&+!")
 
 class TextTools():

@@ -19,7 +19,6 @@
 #
 #	Johannes Bauer <JohannesBauer@gmx.de>
 
-import asyncio
 import logging
 import collections
 from airc.ReplyCode import ReplyCode

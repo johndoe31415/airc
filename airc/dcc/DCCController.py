@@ -22,7 +22,6 @@
 import os
 import time
 import logging
-import asyncio
 import shutil
 import contextlib
 from airc.dcc.DCCConfiguration import DCCConfiguration

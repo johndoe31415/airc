@@ -27,5 +27,5 @@ class AnonymousIdentityGeneratorTests(unittest.TestCase):
 		# We do generate quite a bit of them to ensure that hopefully every
 		# random code-path has been taken at least once.
 		aig = iter(AnonymousIdentityGenerator())
-		for i in range(1000):
+		for _ in range(1000):
 			next(aig).to_string(full = True)

@@ -26,7 +26,6 @@ import string
 import datetime
 from airc.IRCIdentity import IRCIdentity
 from airc.IRCIdentityGenerator import IRCIdentityGenerator
-from airc.IRCIdentityGenerator import IRCIdentityGenerator
 from .RandomDist import RandomDist
 
 class AnonymousIdentityGenerator(IRCIdentityGenerator):
