@@ -312,3 +312,12 @@ class DCCRecvTransfer():
 		else:
 			self._state = DCCTransferState.Complete
 			self._irc_client.fire_callback(IRCCallbackType.DCCTransferCompleted, self)
+
+	def to_dict(self):
+		return {
+			"state":					self.state.name,
+			"filename":					self.dcc_request.filename,
+			"filesize":					self.dcc_request.filesize,
+			"speed":					self.average_transfer_speed(),
+			"throttle_bytes_per_sec":	self.throttle_bytes_per_sec,
+		}
