@@ -25,3 +25,4 @@ import dataclasses
 class DCCDecision():
 	accept: bool = False
 	filename: str = None
+	throttle_bytes_per_sec: int = None

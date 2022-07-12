@@ -133,6 +133,15 @@ class DCCRecvTransfer():
 				_log.info("Incoming DCC request %s was rejected by handler. Ignoring the request.", self._dcc_request)
 				return None
 			destination = decision.filename
+
+			if decision.throttle_bytes_per_sec is None:
+				# Use default if it was not touched
+				self.throttle_bytes_per_sec = self._dcc_controller.config.default_rx_throttle_bytes_per_sec
+			elif decision.throttle_bytes_per_sec > 0:
+				# If it's zero or negative, no throttling is requested.
+				# Otherwise use what was specified
+				self.throttle_bytes_per_sec = decision.throttle_bytes_per_sec
+
 			_log.info("Incoming DCC request %s was accepted by handler, storing to %s", self._dcc_request, destination)
 		else:
 			destination = self._dcc_controller.config.autoaccept_download_dir + "/" + filename
