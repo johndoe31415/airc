@@ -52,7 +52,8 @@ class DCCRecvTransfer():
 		self._spoolname = None
 		self._throttle_bytes_per_sec = throttle_bytes_per_sec
 		self._transfer_started = None
-		self._bytes_transferred = 0
+		self._bytes_transferred_total = 0
+		self._bytes_transferred_session = 0
 		self._speed_averager = SpeedAverager()
 		self._state = DCCTransferState.Pending
 		self._user_ctx = None
@@ -87,7 +88,7 @@ class DCCRecvTransfer():
 		tdiff = time.time() - self._transfer_started
 		if tdiff < 1e-3:
 			return None
-		return self._bytes_transferred / tdiff
+		return self._bytes_transferred_session / tdiff
 
 	@property
 	def average_transfer_speed_str(self):
@@ -96,6 +97,14 @@ class DCCRecvTransfer():
 			return "N/A"
 		else:
 			return f"{self._FilesizeFormatter(round(ats))}/sec"
+
+	@property
+	def bytes_transferred_session(self):
+		return self._bytes_transferred_session
+
+	@property
+	def bytes_transferred_total(self):
+		return self._bytes_transferred_total
 
 	@property
 	def throttle_bytes_per_sec(self):
@@ -203,8 +212,9 @@ class DCCRecvTransfer():
 			f.seek(resume_offset)
 			while f.tell() < self._dcc_request.filesize:
 				chunk = await reader.read(max_chunksize)
-				self._bytes_transferred += len(chunk)
-				self._speed_averager.add(self._bytes_transferred)
+				self._bytes_transferred_total += len(chunk)
+				self._bytes_transferred_session += len(chunk)
+				self._speed_averager.add(self._bytes_transferred_session)
 				if len(chunk) == 0:
 					raise DCCTransferAbortedException("Peer closed connection of DCC transfer {self._dcc_request} after {f.tell()} bytes.")
 				f.write(chunk)
@@ -329,4 +339,8 @@ class DCCRecvTransfer():
 			"filesize":					self.dcc_request.filesize,
 			"speed":					self.average_transfer_speed(),
 			"throttle_bytes_per_sec":	self.throttle_bytes_per_sec,
+			"bytes_transferred": {
+				"session":				self.bytes_transferred_session,
+				"total":				self.bytes_transferred_total,
+			}
 		}
