@@ -17,6 +17,9 @@ setuptools.setup(
 	download_url = "https://github.com/johndoe31415/airc/archive/v${PACKAGE_VERSION}.tar.gz",
 	keywords = [ "asyncio", "irc", "client", "dcc" ],
 	include_package_data = True,
+	install_requires = [
+		"aiohttp",
+	],
 	classifiers = [
 		"Development Status :: 5 - Production/Stable",
 		"Intended Audience :: Developers",

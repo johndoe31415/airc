@@ -295,7 +295,8 @@ class DCCRecvTransfer():
 			self._state = DCCTransferState.Negotiating
 			with await self._dcc_controller.allocate_passive_port() as server:
 				# Let the peer know which port we're listening on
-				self._irc_client.ctcp_request(self._nickname, f"DCC SEND {self._dcc_request.filename} {int(self._dcc_controller.config.public_ip)} {server.port} {self._dcc_request.filesize} {self._dcc_request.passive_token}")
+				public_ip = await self._dcc_controller.get_public_ip()
+				self._irc_client.ctcp_request(self._nickname, f"DCC SEND {self._dcc_request.filename} {int(public_ip)} {server.port} {self._dcc_request.filesize} {self._dcc_request.passive_token}")
 				try:
 					(reader, writer) = await asyncio.wait_for(server, timeout = self._irc_client.config.timeout(IRCTimeout.DCCPassiveConnectTimeoutSecs))
 

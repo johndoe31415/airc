@@ -29,6 +29,7 @@ from airc.dcc.DCCRecvTransfer import DCCRecvTransfer
 from airc.Exceptions import DCCPassivePortsExhaustedException
 from airc.AsyncSingleConnectionServer import AsyncSingleConnectionServer
 from airc.AsyncBackgroundTasks import AsyncBackgroundTasks
+from airc.IPAddressFinder import IPAddressFinder
 
 _log = logging.getLogger(__spec__.name)
 
@@ -40,6 +41,7 @@ class DCCController():
 			os.makedirs(self.config.download_spooldir_stale)
 		with contextlib.suppress(FileExistsError):
 			os.makedirs(self.config.download_spooldir_active)
+		self._public_ip_finder = IPAddressFinder()
 		if self.config.listening_portrange is None:
 			self._passive_ports = [ ]
 		else:
@@ -49,6 +51,11 @@ class DCCController():
 	@property
 	def config(self):
 		return self._config
+
+	async def get_public_ip(self):
+		if self.config.public_ip is not None:
+			return self.config.public_ip
+		return await self._public_ip_finder.get()
 
 	def _listdirs(self, *dirnames):
 		for dirname in dirnames:
