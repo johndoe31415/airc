@@ -29,4 +29,4 @@ from .IRCIdentity import IRCIdentity
 from .IRCIdentityGenerator import ListIRCIdentityGenerator
 from .IRCNetwork import IRCNetwork
 
-VERSION = "0.0.1-rc0"
+VERSION = "0.0.1"

@@ -21,7 +21,7 @@ setuptools.setup(
 		"aiohttp",
 	],
 	classifiers = [
-		"Development Status :: 5 - Production/Stable",
+		"Development Status :: 4 - Beta",
 		"Intended Audience :: Developers",
 		"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
 		"Programming Language :: Python :: 3",
