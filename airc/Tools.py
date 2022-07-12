@@ -45,7 +45,7 @@ class NameTools():
 		return (len(name) > 0) and (name[0] in "#&+!")
 
 class TextTools():
-	_CONTROL_CODE_REGEX = re.compile("(\x1e|\x1f|\x1d|\x02|\x0f|\x03(\\d{1,2}(,\\d{1,2})?)?)")
+	_CONTROL_CODE_REGEX = re.compile("(\x16|\x1e|\x1f|\x1d|\x02|\x0f|\x03(\\d{1,2}(,\\d{1,2})?)?)")
 
 	@classmethod
 	def strip_all_control_codes(cls, text: str):
