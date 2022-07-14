@@ -25,8 +25,8 @@ import ipaddress
 class DCCConfiguration():
 	def __init__(self):
 		self._autoaccept = False
-		self._download_dir = "~/.airc/downloaded/"
-		self._download_spooldir = "~/.cache/airc/dcc_download/"
+		self.download_dir = "~/.airc/downloaded/"
+		self.download_spooldir = "~/.cache/airc/dcc_download/"
 		self._cleanup_spooldir_on_startup = True
 		self._enable_passive = False
 		self._public_ip = None
