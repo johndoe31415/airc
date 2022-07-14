@@ -25,8 +25,8 @@ import ipaddress
 class DCCConfiguration():
 	def __init__(self):
 		self._autoaccept = False
-		self._download_dir = os.path.expanduser("~/.airc/downloaded/")
-		self._download_spooldir = os.path.expanduser("~/.cache/airc/dcc_download/")
+		self._download_dir = "~/.airc/downloaded/"
+		self._download_spooldir = "~/.cache/airc/dcc_download/"
 		self._cleanup_spooldir_on_startup = True
 		self._enable_passive = False
 		self._public_ip = None
@@ -34,6 +34,9 @@ class DCCConfiguration():
 		self._discard_tail_at_resume = 128 * 1024
 		self._discard_spoolfiles_after_days = 60
 		self._default_rx_throttle_bytes_per_sec = None
+
+	def _path(self, path):
+		return os.path.realpath(os.path.expanduser(path))
 
 	@property
 	def autoaccept(self):
@@ -49,7 +52,7 @@ class DCCConfiguration():
 
 	@download_dir.setter
 	def download_dir(self, value: str):
-		self._download_dir = value
+		self._download_dir = self._path(value)
 
 	@property
 	def download_spooldir(self):
@@ -57,7 +60,7 @@ class DCCConfiguration():
 
 	@download_spooldir.setter
 	def download_spooldir(self, value: str):
-		self._download_spooldir = value
+		self._download_spooldir = self._path(value)
 
 	@property
 	def download_spooldir_active(self):
