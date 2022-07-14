@@ -206,6 +206,7 @@ class DCCRecvTransfer():
 		return active_spoolfile
 
 	async def _download_loop(self, spoolfile, resume_offset, reader, writer):
+		self._bytes_transferred_total = resume_offset
 		max_chunksize = 256 * 1024
 		with open(spoolfile, "ab") as f:
 			f.truncate(resume_offset)
