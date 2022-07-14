@@ -135,7 +135,7 @@ class DCCRecvTransfer():
 		filename = self._sanitize_filename(self._dcc_request.filename)
 		if not self._dcc_controller.config.autoaccept:
 			# Let the client make a decision
-			decision = DCCDecision(filename = self._dcc_controller.config.autoaccept_download_dir + "/" + filename)
+			decision = DCCDecision(filename = self._dcc_controller.config.download_dir + "/" + filename)
 			await asyncio.gather(*self._irc_client.fire_callback(IRCCallbackType.IncomingDCCRequest, self, decision))
 			if not decision.accept:
 				# Handler refuses to accept this file.
@@ -153,7 +153,7 @@ class DCCRecvTransfer():
 
 			_log.info("Incoming DCC request %s was accepted by handler, storing to %s", self._dcc_request, destination)
 		else:
-			destination = self._dcc_controller.config.autoaccept_download_dir + "/" + filename
+			destination = self._dcc_controller.config.download_dir + "/" + filename
 			_log.info("Incoming DCC request %s was autoaccepted, storing to %s", self._dcc_request, destination)
 		return destination
 
