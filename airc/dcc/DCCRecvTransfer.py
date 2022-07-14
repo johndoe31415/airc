@@ -325,9 +325,9 @@ class DCCRecvTransfer():
 	async def handle(self):
 		try:
 			await self._handle()
-		except:
+		except BaseException as e:
 			self._state = DCCTransferState.Failed
-			self._irc_client.fire_callback(IRCCallbackType.DCCTransferInterrupted, self)
+			self._irc_client.fire_callback(IRCCallbackType.DCCTransferInterrupted, self, e)
 			raise
 		else:
 			self._state = DCCTransferState.Complete
