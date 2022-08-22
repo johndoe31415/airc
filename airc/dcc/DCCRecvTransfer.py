@@ -226,6 +226,7 @@ class DCCRecvTransfer():
 					writer.write(ack_msg)
 
 				await self._throttler.throttle(len(chunk))
+		writer.close()
 		_log.info("DCC transfer finished successfully: %s at speed %s", self._dcc_request, self.average_transfer_speed_str)
 
 	def _determine_final_filename(self, filename):
